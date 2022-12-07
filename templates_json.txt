@@ -1,0 +1,39 @@
+USER:
+
+{
+    "id": "1",
+    "name": "José",
+    "nickname": "Zé",
+    "pwd": "eusouoze",
+    "photoId": "39363F1A472827A12BAF9C483E9741607115F243"
+}
+
+AUCTION:
+
+{
+    "id": "1",
+    "title": "Seat ibiza",
+    "description": "Seat ibiza de 98",
+    "imageId": "39363F1A472827A12BAF9C483E9741607115F243",
+    "ownerId": "1",
+    "endDate": "2022-10-25T18:25:43.511Z",
+    "minimumPrice": "15.5",
+    "status": "1",
+    "winnerId": "null"
+}
+
+BID:
+
+{
+    "id": "1",
+    "auctionId": "1",
+    "value": "50",
+    "userId": "1",
+}
+
+LOGIN:
+
+{
+    "userId" : "1",
+    "pwd" : "eusouoze"
+}

@@ -1,0 +1,158 @@
+# REDIS POD DEPLOYMENT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cache
+  template:
+    metadata:
+      labels:
+        app: redis-cache
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: redis-cache
+        image: redis
+        env:
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "yes"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        ports:
+        - containerPort: 6379
+          name: redis
+---
+
+# REDIS SERVICE
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cache
+spec:
+  ports:
+  - port: 6379
+  selector:
+    app: redis-cache
+---
+
+# MONGODB SECRET
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-secret
+type: Opaque
+data:
+  mongo-root-username: cm9zYXRpYWdvbW9uZ29kYg==
+  mongo-root-password: dGhpc2lzb3VycGFzc3dvcmR0b21vbmdvZGJpbmJhc2U2NA==
+---
+
+# MONGODB POD DEPLOYMENT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+  matchLabels:
+    app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongo-root-username
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongo-root-password
+---
+
+# MONGODB SERVICE
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+  selector:
+    app: mongodb
+---
+
+# APP POD DEPLOYMENT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: main-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: main-app
+  template:
+    metadata:
+      labels:
+        app: main-app
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: main-app
+        image: tjfernandes/scc2223-app
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+        ports:
+        - containerPort: 80
+        env:
+        - name: REDIS
+          value: "redis-cache"
+---
+
+# APP SERVICE
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: main-app
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: main-app
+  
