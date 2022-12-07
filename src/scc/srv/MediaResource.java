@@ -9,6 +9,10 @@ import com.azure.storage.blob.models.ListBlobsOptions;
 import jakarta.ws.rs.*;
 import scc.utils.Hash;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,21 +39,16 @@ public class MediaResource
 
 		String key = Hash.of(contents);
 
+		if (key == null || contents == null){
+			throw new RuntimeException();
+		}
 		try {
-
-			BinaryData data = BinaryData.fromBytes(contents);
-
-			BlobContainerClient containerClient = new BlobContainerClientBuilder()
-					.connectionString(storageConnectionString)
-					.containerName(CONTAINER_NAME)
-					.buildClient();
-
-			BlobClient blob = containerClient.getBlobClient(key);
-
-			blob.upload(data);
-
-		} catch( Exception e) {
-			e.printStackTrace();
+			File file = new File(key);
+			file.createNewFile();
+			FileOutputStream outputStream = new FileOutputStream(file);
+			outputStream.write(contents);
+			outputStream.close();
+		}catch (IOException e) {
 		}
 
 		return key;
@@ -64,25 +63,31 @@ public class MediaResource
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public byte[] download(@PathParam("id") String id) {
 
-		byte[] arr = null;
-		try {
-			// Get container client
-			BlobContainerClient containerClient = new BlobContainerClientBuilder()
-					.connectionString(storageConnectionString)
-					.containerName(CONTAINER_NAME)
-					.buildClient();
 
-			BlobClient blob = containerClient.getBlobClient( id);
+		if (id == null){
+			throw new RuntimeException();
+		}
+		File file = new File(id);
 
-			BinaryData data = blob.downloadContent();
+		if(!file.exists()){
+			throw new RuntimeException();
+		}
 
-			arr = data.toBytes();
+		byte[] content = new byte[(int) file.length()];
 
-		} catch( Exception e) {
+		try
+		{
+			FileInputStream fileInputStream = new FileInputStream(file);
+			fileInputStream.read(content);
+			fileInputStream.close();
+		}
+		catch (IOException e)
+		{
 			e.printStackTrace();
 		}
-		if(arr == null) throw new ServiceUnavailableException();
-		return arr;
+		if(content == null) throw new ServiceUnavailableException();
+
+		return content;
 	}
 
 	/**
@@ -92,24 +97,15 @@ public class MediaResource
 	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String list() {
-		List<String> arr = new ArrayList<>();
-		try {
-			// Get container client
-			BlobContainerClient containerClient = new BlobContainerClientBuilder()
-					.connectionString(storageConnectionString)
-					.containerName(CONTAINER_NAME)
-					.buildClient();
+		File folder = new File(System.getProperty("user.dir"));
+		File[] listOfFiles = folder.listFiles();
+		List<String> list = new ArrayList();
 
-			// Get client to blob
-			var blobs = containerClient.listBlobs();
-
-			blobs.forEach(b -> arr.add(b.getName()));
-
-		} catch( Exception e) {
-			e.printStackTrace();
+		for (int i = 0; i < listOfFiles.length; i++) {
+			if (listOfFiles[i].isFile()) {
+				list.add(listOfFiles[i].getName());
+			}
 		}
-		if(arr.isEmpty()) throw new ServiceUnavailableException();
-
-		return arr.toString();
+		return list.toString();
 	}
 }
