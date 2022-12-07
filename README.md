@@ -1,4 +1,4 @@
-# SCC-Projeto
+# SCC-Projeto-v2
 
 Diogo Rosa; 57464; dms.rosa@campus.fct.unl.pt
 
