@@ -26,8 +26,8 @@ import jakarta.ws.rs.core.MediaType;
 @Path("/media")
 public class MediaResource
 {
-	String storageConnectionString = System.getenv("STORAGE_CONNECTION_STRING");
-	private static final String CONTAINER_NAME = "images";
+	private static final String PATH = System.getenv("VOLUME_PATH");
+
 	/**
 	 * Post a new image.The id of the image is its hash.
 	 */
@@ -43,7 +43,7 @@ public class MediaResource
 			throw new RuntimeException();
 		}
 		try {
-			File file = new File(key);
+			File file = new File(PATH+key);
 			file.createNewFile();
 			FileOutputStream outputStream = new FileOutputStream(file);
 			outputStream.write(contents);
@@ -67,7 +67,7 @@ public class MediaResource
 		if (id == null){
 			throw new RuntimeException();
 		}
-		File file = new File(id);
+		File file = new File(PATH+id);
 
 		if(!file.exists()){
 			throw new RuntimeException();
@@ -85,7 +85,7 @@ public class MediaResource
 		{
 			e.printStackTrace();
 		}
-		if(content == null) throw new ServiceUnavailableException();
+		if(content.length == 0) throw new ServiceUnavailableException();
 
 		return content;
 	}
@@ -97,7 +97,7 @@ public class MediaResource
 	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String list() {
-		File folder = new File(System.getProperty("user.dir"));
+		File folder = new File(PATH);
 		File[] listOfFiles = folder.listFiles();
 		List<String> list = new ArrayList();
 

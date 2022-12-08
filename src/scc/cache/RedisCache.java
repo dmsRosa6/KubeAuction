@@ -4,7 +4,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 public class RedisCache {
-	private static final String RedisHostname = System.getenv("REDIS");
+	private static final String RedisHostname = System.getenv("REDIS_HOSTNAME");
 	private static final String RedisKey = System.getenv("REDIS_KEY");
 	public static final String CACHE_AUCTION_PREFIX = "auction:";
 	public static final String CACHE_BID_PREFIX = "bid:";
