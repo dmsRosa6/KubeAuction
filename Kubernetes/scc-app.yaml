@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scc-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scc-app
+  template:
+    metadata:
+      labels:
+        app: scc-app
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: scc-app
+        image: tjfernandes/scc2223-app
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        ports:
+        - containerPort: 80
+        env:
+        - name: REDIS_HOSTNAME
+          value: "redis-back"
+        - name: VOLUME_PATH
+          value: "/mnt/vol/media/"
+        volumeMounts:
+          - mountPath: "/mnt/vol/media/"
+            name: mediavolume
+      volumes:
+        - name: mediavolume
+          persistentVolumeClaim:
+            claimName: azure-managed-disk
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scc-app
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: scc-app

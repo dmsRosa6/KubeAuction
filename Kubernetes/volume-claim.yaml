@@ -1,0 +1,13 @@
+##pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: azure-managed-disk
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: azurefile
