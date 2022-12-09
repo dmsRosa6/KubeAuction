@@ -3,6 +3,7 @@ package scc.srv;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.Mongo;
 import com.sun.tools.xjc.model.CAdapter;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Cookie;
@@ -33,12 +34,12 @@ public class UsersResource {
 
     public static final String COOKIE_PARAM_SESSION = "scc:session";
 
-    private CosmosDBLayer db;
+    private MongoDBLayer db;
 
     private ObjectMapper mapper;
 
     public UsersResource(){
-        db = CosmosDBLayer.getInstance();
+        db = MongoDBLayer.getInstance();
         mapper = new ObjectMapper();
     }
 
@@ -60,10 +61,10 @@ public class UsersResource {
                 String cacheRes = jedis.get(RedisCache.CACHE_USER_PREFIX + user.getId());
                 if (cacheRes != null) throw new WebApplicationException(USER_ALREADY_EXISTS_EXCEPTION);
             }
-            var userExistsResponse = db.getUserById(user.getId());
-            if(userExistsResponse.iterator().hasNext()) throw new WebApplicationException(USER_ALREADY_EXISTS_EXCEPTION);
+            var userExistsResponse = db.getUser(user.getId());
+            if(userExistsResponse == null) throw new WebApplicationException(USER_ALREADY_EXISTS_EXCEPTION);
 
-            UserResponse = db.putUser(user).getItem();
+            UserResponse = db.putUser(user);
 
             if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_USER_PREFIX+user.getId(), RedisCache.DEFAULT_CACHE_TIMEOUT, mapper.writeValueAsString(UserResponse));
         }catch (Exception e) {
@@ -88,7 +89,7 @@ public class UsersResource {
         if(user.getPwd() != null) oldUser.setPwd(user.getPwd());
         if(user.getPhotoId() != null) oldUser.setName(user.getPhotoId());
 
-        updatedUser = db.updateUser(userId,oldUser).getItem();
+        updatedUser = db.updateUser(userId,oldUser);
         if(RedisCache.USE_CACHE) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 jedis.setex(RedisCache.CACHE_USER_PREFIX + userId, RedisCache.DEFAULT_CACHE_TIMEOUT, mapper.writeValueAsString(updatedUser));
@@ -114,9 +115,10 @@ public class UsersResource {
     public User deleteUser(@CookieParam(UsersResource.COOKIE_PARAM_SESSION) Cookie session, @PathParam("id") String userId) {
         checkCookieUser(session,userId);
         User user = getUserById(userId);
-        return db.softDeleteUser(userId,user).getItem();
+        return db.deleteUser(userId,user);
     }
 
+    /**
     @GET
     @Path("/{id}/auctions")
     @Produces(MediaType.APPLICATION_JSON)
@@ -146,7 +148,7 @@ public class UsersResource {
         }
         return auctionsId;
     }
-
+**/
     @POST
     @Path("/auth")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -198,8 +200,7 @@ public class UsersResource {
 
 
     private User getUserById(String id){
-        Iterator<UserDAO> response = null;
-        User user = null;
+        User response = null;
 
         try {
             Jedis jedis = null;
@@ -210,16 +211,15 @@ public class UsersResource {
                     return mapper.readValue(cacheRes, User.class);
                 }
             }
-            response = db.getUserById(id).iterator();
-            if(!response.hasNext()) throw new WebApplicationException(USER_DOES_NOT_EXIST_EXCEPTION);
-            user = response.next().toUser();
-            if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_USER_PREFIX+id,RedisCache.DEFAULT_CACHE_TIMEOUT,mapper.writeValueAsString(user));
+            response = db.getUser(id);
+            if(response == null) throw new WebApplicationException(USER_DOES_NOT_EXIST_EXCEPTION);
+            if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_USER_PREFIX+id,RedisCache.DEFAULT_CACHE_TIMEOUT,mapper.writeValueAsString(response));
 
         }catch (Exception e) {
             e.printStackTrace();
         }
 
-        return user;
+        return response;
     }
 
     private void isUserValid(User user){
