@@ -4,17 +4,21 @@ import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.mongodb.*;
+import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import jakarta.ws.rs.WebApplicationException;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
-import static com.mongodb.client.model.Filters.and;
-import static com.mongodb.client.model.Filters.eq;
+import java.time.LocalDateTime;
+import java.util.Date;
+
+import static com.mongodb.client.model.Filters.*;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
@@ -140,13 +144,13 @@ public class MongoDBLayer {
         return list;
     }
 
-    //TODO ISTO TA ESTRANHO, teremos de filtrar este iterable?
-    public FindIterable<Bid> userFollowedAuctions(String userId){
+    //TODO ISTO TA ESTRANHO
+    public DistinctIterable<Bid> userFollowedAuctions(String userId){
         init();
-        FindIterable<Bid> list = null;
+        DistinctIterable<Bid> list = null;
         try{
             Bson query = eq("userId",userId);
-            list = bids.find(query);
+            list = bids.distinct("auctionId", query,Bid.class);
         }catch (MongoException e) {
             checkError(e.getCode());
         }
@@ -256,5 +260,19 @@ public class MongoDBLayer {
         return list;
     }
 
-    //todo missing closing auctions
+    //todo essa verificacao n sei se ta certa
+    public FindIterable<Auction> listClosingAuctions(){
+        init();
+        FindIterable<Auction> list = null;
+
+        try{
+            LocalDateTime now = LocalDateTime.now();
+            Bson query = and(lt("endDate", now.plusHours(1)),eq("auctionStatus","OPEN"));
+            list = auctions.find(query);
+        }catch (MongoException e) {
+            checkError(e.getCode());
+        }
+
+        return list;
+    }
 }

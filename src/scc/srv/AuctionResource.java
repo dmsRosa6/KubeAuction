@@ -275,20 +275,18 @@ public class AuctionResource {
         return response;
     }
 
-    /**
     @GET
     @Path("/closing")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Auction> closingAuctions(){
         List<Auction> auctions = new ArrayList<>();
-        CosmosPagedIterable<AuctionDAO> response = db.getClosingAuctions();
-        Iterator<AuctionDAO> ite = response.iterator();
+        var response = db.listClosingAuctions();
+        var ite = response.iterator();
         while (ite.hasNext()){
-            auctions.add(ite.next().toAuction());
+            auctions.add(ite.next());
         }
         return auctions;
     }
-    **/
 
     private Auction getAuctionById(String id){
         Auction auctionResponse = null;

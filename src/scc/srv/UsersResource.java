@@ -132,22 +132,22 @@ public class UsersResource {
         }
         return auctions;
     }
-    /**
+
     @GET
     @Path("/{id}/following")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> listUserFollowedAuctions(@PathParam("id") String userId){
         User user = getUserById(userId);
         List<String> auctionsId = new ArrayList<>();
-        CosmosPagedIterable<BidDAO> result = db.getUserFollowedAuctions(userId);
-        Iterator<BidDAO> ite = result.iterator();
+        var result = db.userFollowedAuctions(userId);
+        var ite = result.iterator();
         while (ite.hasNext()){
-            BidDAO bid = ite.next();
-            auctionsId.add(ite.next().toBid().getAuctionId());
+            Bid bid = ite.next();
+            auctionsId.add(ite.next().getAuctionId());
         }
         return auctionsId;
     }
-**/
+
     @POST
     @Path("/auth")
     @Consumes(MediaType.APPLICATION_JSON)
