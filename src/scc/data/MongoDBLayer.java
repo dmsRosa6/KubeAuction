@@ -19,9 +19,11 @@ import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 public class MongoDBLayer {
 
-    private static final String DB_HOSTNAME = System.getenv("MONGODB_ADDRESS");
+    private static final String DB_HOSTNAME = System.getenv("ME_CONFIG_MONGODB_SERVER");
     private static final String DB_NAME = "scc23dbrosatiago";
     private static final int DB_PORT = 27017;
+
+    private static CodecRegistry pojoCodecRegistry;
 
     private static MongoDBLayer instance;
 
@@ -30,12 +32,14 @@ public class MongoDBLayer {
             return instance;
         }
 
-        CodecRegistry pojoCodecRegistry = fromRegistries(MongoClient.getDefaultCodecRegistry(),
+        System.out.println("MONGO HOSTNAME: " + DB_HOSTNAME);
+
+        pojoCodecRegistry = fromRegistries(MongoClient.getDefaultCodecRegistry(),
                 fromProviders(PojoCodecProvider.builder().automatic(true).build()));
 
 
         //é preciso o url -> hostname::port
-        MongoClient client = new MongoClient(DB_HOSTNAME, MongoClientOptions.builder().codecRegistry(pojoCodecRegistry).build());
+        MongoClient client = new MongoClient(DB_HOSTNAME+":"+DB_PORT, MongoClientOptions.builder().codecRegistry(pojoCodecRegistry).build());
 
         //MongoClient client = new MongoClient(DB_HOSTNAME,DB_PORT);
 
@@ -93,7 +97,7 @@ public class MongoDBLayer {
         init();
         User user = null;
         try{
-            Bson query = eq("_id",userId);
+            Bson query = eq("_id", userId);
             user = users.find(query).first();
         }catch (MongoException e) {
             checkError(e.getCode());

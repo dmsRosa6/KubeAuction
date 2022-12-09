@@ -62,7 +62,7 @@ public class UsersResource {
                 if (cacheRes != null) throw new WebApplicationException(USER_ALREADY_EXISTS_EXCEPTION);
             }
             var userExistsResponse = db.getUser(user.getId());
-            if(userExistsResponse == null) throw new WebApplicationException(USER_ALREADY_EXISTS_EXCEPTION);
+            if(userExistsResponse != null) throw new WebApplicationException(USER_ALREADY_EXISTS_EXCEPTION);
 
             UserResponse = db.putUser(user);
 

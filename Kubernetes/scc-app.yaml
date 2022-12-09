@@ -31,6 +31,11 @@ spec:
           value: "redis-back"
         - name: VOLUME_PATH
           value: "/mnt/vol/media/"
+        - name: ME_CONFIG_MONGODB_SERVER
+          valueFrom:
+            configMapKeyRef:
+              name: mongodb-configmap
+              key: database_url
         volumeMounts:
           - mountPath: "/mnt/vol/media/"
             name: mediavolume
