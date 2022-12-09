@@ -33,12 +33,12 @@ public class AuctionResource {
     private static final String INVALID_QUESTION_EXCEPTION = "Invalid Question";
     private static final String AUCTION_ID_DOES_NOT_MATCH_EXCEPTION = "Auction id on the path does not match the one on the %s object";
 
-    private CosmosDBLayer db;
+    private MongoDBLayer db;
 
     private ObjectMapper mapper;
 
     public AuctionResource() {
-        db = CosmosDBLayer.getInstance();
+        db = MongoDBLayer.getInstance();
         mapper = new ObjectMapper();
     }
 
@@ -53,23 +53,19 @@ public class AuctionResource {
 
         UsersResource.checkCookieUser(session,auction.getOwnerId());
 
-        try{
-            Jedis jedis = null;
-
-            if(RedisCache.USE_CACHE) jedis = RedisCache.getCachePool().getResource();
+        try(Jedis jedis = RedisCache.getCachePool().getResource()){
 
             if(RedisCache.USE_CACHE){
                 String cacheRes = jedis.get(RedisCache.CACHE_AUCTION_PREFIX+auction.getId());
                 if(cacheRes !=null) throw new WebApplicationException(AUCTION_ALREADY_EXISTS_EXCEPTION);
             }
 
-
-            var auctionExistsResponse = db.getAuctionById(auction.getId());
-            if(auctionExistsResponse.iterator().hasNext()) throw new WebApplicationException(AUCTION_ALREADY_EXISTS_EXCEPTION);
+            var auctionExistsResponse = db.getAuction(auction.getId());
+            if(auctionExistsResponse != null) throw new WebApplicationException(AUCTION_ALREADY_EXISTS_EXCEPTION);
 
             getUserById(auction.getOwnerId());
 
-            auctionResponse= db.putAuction(auction).getItem();
+            auctionResponse= db.putAuction(auction);
             if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_AUCTION_PREFIX+auction.getId(),RedisCache.DEFAULT_CACHE_TIMEOUT, mapper.writeValueAsString(auctionResponse));
         }catch (Exception e) {
             e.printStackTrace();
@@ -98,10 +94,8 @@ public class AuctionResource {
     }
 
     private Auction updateAuction(String auctionId, Auction newAuction, Auction oldAuction) {
-        CosmosItemResponse<Auction> response = null;
-        try {
-            Jedis jedis = null;
-            if(RedisCache.USE_CACHE) jedis = RedisCache.getCachePool().getResource();
+        Auction response = null;
+        try(Jedis jedis = RedisCache.getCachePool().getResource()) {
 
             if(newAuction.getDescription() != null) oldAuction.setDescription(newAuction.getDescription());
             if(newAuction.getImageId() != null) oldAuction.setImageId(newAuction.getImageId());
@@ -110,12 +104,13 @@ public class AuctionResource {
 
             response = db.updateAuction(auctionId,oldAuction);
 
-            if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_AUCTION_PREFIX+auctionId,RedisCache.DEFAULT_CACHE_TIMEOUT,mapper.writeValueAsString(response.getItem()));
+            if(RedisCache.USE_CACHE)
+                jedis.setex(RedisCache.CACHE_AUCTION_PREFIX+auctionId,RedisCache.DEFAULT_CACHE_TIMEOUT,mapper.writeValueAsString(response));
         }catch (Exception e){
             e.printStackTrace();
         }
 
-        return response.getItem();
+        return response;
     }
 
 
@@ -145,7 +140,7 @@ public class AuctionResource {
             throw new WebApplicationException(BID_VALUE_IS_TO_LOW_EXCEPTION);
         }
 
-        Bid createdBid = db.putBid(bid).getItem();
+        Bid createdBid = db.putBid(bid);
 
         auction.setWinnerBid(createdBid);
 
@@ -166,13 +161,13 @@ public class AuctionResource {
     @Path("/{id}/bid")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Bid> listBids(@PathParam("id") String auctionId){
-        var getAuctionResponse = db.getAuctionById(auctionId);
-        if(!getAuctionResponse.iterator().hasNext()) throw new WebApplicationException(AUCTION_DOES_NOT_EXIST_EXCEPTION);
+        var getAuctionResponse = db.getAuction(auctionId);
+        if(getAuctionResponse == null) throw new WebApplicationException(AUCTION_DOES_NOT_EXIST_EXCEPTION);
         List<Bid> bids = new ArrayList<>();
-        CosmosPagedIterable<BidDAO> result = db.listAuctionBids(auctionId);
-        Iterator<BidDAO> ite = result.iterator();
+        var result = db.listAuctionsBids(auctionId);
+       var ite = result.iterator();
         while (ite.hasNext()){
-            bids.add(ite.next().toBid());
+            bids.add(ite.next());
         }
         return bids;
     }
@@ -190,7 +185,7 @@ public class AuctionResource {
 
         getAuctionById(auctionId);
 
-        Question newQuestion = db.putQuestion(question).getItem();
+        Question newQuestion = db.putQuestion(question);
         if(RedisCache.USE_CACHE) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 jedis.setex(RedisCache.CACHE_QUESTION_PREFIX + newQuestion.getId(), RedisCache.DEFAULT_CACHE_TIMEOUT, mapper.writeValueAsString(newQuestion));
@@ -214,7 +209,7 @@ public class AuctionResource {
 
         UsersResource.checkCookieUser(session,auction.getOwnerId());
 
-        Question modifiedQuestion = db.replyQuestion(questionId,reply).getItem();
+        Question modifiedQuestion = db.replyToQuestion(questionId,reply);
 
         if(RedisCache.USE_CACHE) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -226,6 +221,8 @@ public class AuctionResource {
         return modifiedQuestion;
     }
 
+    /**
+     * todo spark
     @GET
     @Path("/any/popular")
     @Produces(MediaType.APPLICATION_JSON)
@@ -238,6 +235,7 @@ public class AuctionResource {
         }
         return auctions;
     }
+     **/
 
     @GET
     @Path("/{id}/question")
@@ -247,10 +245,10 @@ public class AuctionResource {
         getAuctionById(auctionId);
 
         List<Question> questions = new ArrayList<>();
-        CosmosPagedIterable<QuestionDAO> response = db.listQuestions(auctionId);
-        Iterator<QuestionDAO> ite = response.iterator();
+       var response = db.listAuctionsQuestions(auctionId);
+       var ite = response.iterator();
         while (ite.hasNext()){
-            questions.add(ite.next().toQuestion());
+            questions.add(ite.next());
         }
         return questions;
     }
@@ -262,27 +260,22 @@ public class AuctionResource {
 
         getAuctionById(auctionId);
 
-        Question question = null;
+        var response = db.getQuestion(questionId);
 
-        CosmosPagedIterable<QuestionDAO> response = db.getQuestionById(questionId);
-
-        Iterator<QuestionDAO> ite = response.iterator();
-
-        if(!ite.hasNext()) throw new WebApplicationException(QUESTION_DOES_NOT_EXIST_EXCEPTION);
-
-        question = ite.next().toQuestion();
+        if(response == null) throw new WebApplicationException(QUESTION_DOES_NOT_EXIST_EXCEPTION);
 
         if(RedisCache.USE_CACHE) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.setex(RedisCache.CACHE_QUESTION_PREFIX + question.getId(), RedisCache.DEFAULT_CACHE_TIMEOUT, mapper.writeValueAsString(question));
+                jedis.setex(RedisCache.CACHE_QUESTION_PREFIX + response.getId(), RedisCache.DEFAULT_CACHE_TIMEOUT, mapper.writeValueAsString(response));
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        return question;
+        return response;
     }
 
+    /**
     @GET
     @Path("/closing")
     @Produces(MediaType.APPLICATION_JSON)
@@ -295,31 +288,29 @@ public class AuctionResource {
         }
         return auctions;
     }
+    **/
 
     private Auction getAuctionById(String id){
-        Iterator<AuctionDAO> response = null;
-        Auction auction = null;
+        Auction auctionResponse = null;
 
-        try{
-            Jedis jedis = null;
+        try(Jedis jedis = RedisCache.getCachePool().getResource()){
             if(RedisCache.USE_CACHE) {
-                jedis = RedisCache.getCachePool().getResource();
                 String cacheRes = jedis.get(RedisCache.CACHE_AUCTION_PREFIX + id);
                 if (cacheRes != null) {
                     return mapper.readValue(cacheRes, Auction.class);
                 }
             }
 
-            response = db.getAuctionById(id).iterator();
-            if(!response.hasNext()) throw new WebApplicationException(AUCTION_DOES_NOT_EXIST_EXCEPTION);
-            auction = response.next().toAuction();
-            if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_AUCTION_PREFIX+id,RedisCache.DEFAULT_CACHE_TIMEOUT,mapper.writeValueAsString(auction));
+            auctionResponse = db.getAuction(id);
+            if(auctionResponse == null) throw new WebApplicationException(AUCTION_DOES_NOT_EXIST_EXCEPTION);
+
+            if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_AUCTION_PREFIX+id,RedisCache.DEFAULT_CACHE_TIMEOUT,mapper.writeValueAsString(auctionResponse));
 
         }catch (Exception e) {
             e.printStackTrace();
         }
 
-        return auction;
+        return auctionResponse;
     }
 
     private void isAuctionValid(Auction auction){
@@ -349,27 +340,22 @@ public class AuctionResource {
     }
 
     private User getUserById(String id){
-        Iterator<UserDAO> response = null;
-        User user = null;
-
-        try{
-            Jedis jedis = null;
+        User userResponse = null;
+        try(Jedis jedis = RedisCache.getCachePool().getResource()){
             if(RedisCache.USE_CACHE){
-                jedis = RedisCache.getCachePool().getResource();
                 String cacheRes = jedis.get(RedisCache.CACHE_USER_PREFIX+id);
                 if(cacheRes !=null) {
                     return mapper.readValue(cacheRes,User.class);
                 }
             }
-            response = db.getUserById(id).iterator();
-            if(!response.hasNext()) throw new WebApplicationException(UsersResource.USER_DOES_NOT_EXIST_EXCEPTION);
-            user = response.next().toUser();
-            if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_USER_PREFIX+id,RedisCache.DEFAULT_CACHE_TIMEOUT,mapper.writeValueAsString(user));
+            userResponse = db.getUser(id);
+            if(userResponse == null) throw new WebApplicationException(UsersResource.USER_DOES_NOT_EXIST_EXCEPTION);
+            if(RedisCache.USE_CACHE) jedis.setex(RedisCache.CACHE_USER_PREFIX+id,RedisCache.DEFAULT_CACHE_TIMEOUT,mapper.writeValueAsString(userResponse));
 
         }catch (Exception e) {
             e.printStackTrace();
         }
 
-        return user;
+        return userResponse;
     }
 }

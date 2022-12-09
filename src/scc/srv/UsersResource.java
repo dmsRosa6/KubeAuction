@@ -4,6 +4,7 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.Mongo;
+import com.mongodb.client.FindIterable;
 import com.sun.tools.xjc.model.CAdapter;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Cookie;
@@ -54,10 +55,8 @@ public class UsersResource {
 
         user.setPwd(Hash.of(user.getPwd()));
 
-        try{
-            Jedis jedis =null;
+        try(Jedis jedis = RedisCache.getCachePool().getResource()){
             if(RedisCache.USE_CACHE) {
-                jedis = RedisCache.getCachePool().getResource();
                 String cacheRes = jedis.get(RedisCache.CACHE_USER_PREFIX + user.getId());
                 if (cacheRes != null) throw new WebApplicationException(USER_ALREADY_EXISTS_EXCEPTION);
             }
@@ -118,7 +117,7 @@ public class UsersResource {
         return db.deleteUser(userId,user);
     }
 
-    /**
+
     @GET
     @Path("/{id}/auctions")
     @Produces(MediaType.APPLICATION_JSON)
@@ -126,14 +125,14 @@ public class UsersResource {
                                           @QueryParam("auctionStatus") String auctionStatus) {
         getUserById(userId);
         List<Auction> auctions = new ArrayList<>();
-        CosmosPagedIterable<AuctionDAO> result = db.getUsersAuctionsById(userId,auctionStatus);
-        Iterator<AuctionDAO> ite = result.iterator();
+        FindIterable<Auction> result = db.userAuctions(userId,auctionStatus);
+        var ite = result.iterator();
         while (ite.hasNext()){
-            auctions.add(ite.next().toAuction());
+            auctions.add(ite.next());
         }
         return auctions;
     }
-
+    /**
     @GET
     @Path("/{id}/following")
     @Produces(MediaType.APPLICATION_JSON)
@@ -202,10 +201,8 @@ public class UsersResource {
     private User getUserById(String id){
         User response = null;
 
-        try {
-            Jedis jedis = null;
+        try(Jedis jedis = RedisCache.getCachePool().getResource()) {
             if(RedisCache.USE_CACHE) {
-                jedis = RedisCache.getCachePool().getResource();
                 String cacheRes = jedis.get(RedisCache.CACHE_USER_PREFIX + id);
                 if (cacheRes != null) {
                     return mapper.readValue(cacheRes, User.class);

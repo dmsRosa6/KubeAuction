@@ -13,6 +13,7 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
+import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
@@ -127,11 +128,11 @@ public class MongoDBLayer {
         return user;
     }
 
-    public FindIterable<Auction> userAuctions(String userId){
+    public FindIterable<Auction> userAuctions(String userId,String auctionStatus){
         init();
         FindIterable<Auction> list = null;
         try{
-            Bson query = eq("userId",userId);
+            Bson query = and(eq("userId",userId),eq("auctionStatus",auctionStatus));
             list = auctions.find(query);
         }catch (MongoException e) {
             checkError(e.getCode());
@@ -195,7 +196,7 @@ public class MongoDBLayer {
         return bid;
     }
 
-    public FindIterable<Bid> listBids(String auctionId){
+    public FindIterable<Bid> listAuctionsBids(String auctionId){
         init();
         FindIterable<Bid> list = null;
         try{
@@ -243,7 +244,7 @@ public class MongoDBLayer {
         return question;
     }
 
-    public FindIterable<Question> listQuestions(String auctionId){
+    public FindIterable<Question> listAuctionsQuestions(String auctionId){
         init();
         FindIterable<Question> list = null;
         try{
