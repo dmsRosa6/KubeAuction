@@ -32,6 +32,10 @@ public class MongoDBLayer {
 
     private static MongoDBLayer instance;
 
+    private int auctionsCounter;
+    private int bidsCounter;
+    private int questionsCounter;
+
     public static synchronized MongoDBLayer getInstance() {
         if( instance != null) {
             return instance;
@@ -61,7 +65,12 @@ public class MongoDBLayer {
     private MongoCollection<Question> questions;
 
 
-    public MongoDBLayer(MongoClient client) { this.client = client;}
+    public MongoDBLayer(MongoClient client) {
+        this.auctionsCounter = 1;
+        this.bidsCounter = 1;
+        this.questionsCounter = 1;
+        this.client = client;
+    }
 
     private synchronized void init() {
         if( db != null)
@@ -85,6 +94,22 @@ public class MongoDBLayer {
                 throw new WebApplicationException("EXECUTION_TIMEOUT");
             default:
                 throw new WebApplicationException("UNCATEGORIZED");
+        }
+    }
+
+    public int getId(int collectionType){
+        switch (collectionType){
+            case 0:
+                return auctionsCounter++;
+
+            case 1:
+                return bidsCounter++;
+
+            case 2:
+                return questionsCounter++;
+
+            default:
+                throw new WebApplicationException("INVALID COLLECTION TYPE");
         }
     }
 

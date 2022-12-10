@@ -18,6 +18,15 @@ public class Question {
         this.reply = null;
     }
 
+    public Question(String auctionId, String userId,String message){
+        super();
+        this.auctionId = auctionId;
+        this.id = null;
+        this.userId = userId;
+        this.message = message;
+        this.reply = null;
+    }
+
     public Question(String id, String auctionId, String userId, String message, String reply) {
         super();
         this.auctionId = auctionId;

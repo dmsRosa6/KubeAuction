@@ -34,6 +34,19 @@ public class Auction {
         this.winnerBid = winnerBid;
     }
 
+    public Auction(String title,String description,String imageId,String ownerId,Date endDate, float minimumPrice,AuctionStatus auctionStatus, Bid winnerBid){
+        super();
+        this.id = null;
+        this.description = description;
+        this.title = title;
+        this.endDate = endDate;
+        this.ownerId = ownerId;
+        this.imageId = imageId;
+        this.minimumPrice = minimumPrice;
+        this.auctionStatus = auctionStatus;
+        this.winnerBid = winnerBid;
+    }
+
     public Auction(String id, String title,String description,String imageId,String ownerId,Date endDate, float minimumPrice,AuctionStatus auctionStatus){
         super();
         this.id = id;

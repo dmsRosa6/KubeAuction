@@ -23,6 +23,16 @@ public class Bid {
         this.time = time;
     }
 
+    public Bid(String auctionId, float amount, String userId,Date time){
+        super();
+        id = null;
+        this.auctionId = auctionId;
+        this.id = id;
+        this.amount = amount;
+        this.userId = userId;
+        this.time = time;
+    }
+
     public Date getTime() {
         return time;
     }

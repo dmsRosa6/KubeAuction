@@ -53,6 +53,8 @@ public class AuctionResource {
 
         UsersResource.checkCookieUser(session,auction.getOwnerId());
 
+        auction.setId(String.valueOf(db.getId(0)));
+
         try(Jedis jedis = RedisCache.getCachePool().getResource()){
 
             if(RedisCache.USE_CACHE){
@@ -140,6 +142,8 @@ public class AuctionResource {
             throw new WebApplicationException(BID_VALUE_IS_TO_LOW_EXCEPTION);
         }
 
+        bid.setId(String.valueOf(db.getId(1)));
+
         Bid createdBid = db.putBid(bid);
 
         auction.setWinnerBid(createdBid);
@@ -185,7 +189,11 @@ public class AuctionResource {
 
         getAuctionById(auctionId);
 
+        question.setId(String.valueOf(db.getId(2)));
+
         Question newQuestion = db.putQuestion(question);
+
+
         if(RedisCache.USE_CACHE) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 jedis.setex(RedisCache.CACHE_QUESTION_PREFIX + newQuestion.getId(), RedisCache.DEFAULT_CACHE_TIMEOUT, mapper.writeValueAsString(newQuestion));
@@ -313,7 +321,6 @@ public class AuctionResource {
 
     private void isAuctionValid(Auction auction){
         if(auction.getEndDate() == null) throw new WebApplicationException(INVALID_AUCTION_EXCEPTION);
-        if(auction.getId() == null) throw new WebApplicationException(INVALID_AUCTION_EXCEPTION);
         if(auction.getImageId() == null) throw new WebApplicationException(INVALID_AUCTION_EXCEPTION);
         if(auction.getAuctionStatus() == null) throw new WebApplicationException(INVALID_AUCTION_EXCEPTION);
         if(auction.getDescription() == null) throw new WebApplicationException(INVALID_AUCTION_EXCEPTION);
@@ -325,13 +332,11 @@ public class AuctionResource {
     private void isBidValid(Bid bid){
         if(bid.getAmount() < 0) throw new WebApplicationException(INVALID_BID_EXCEPTION);
         if(bid.getTime() == null) throw new WebApplicationException(INVALID_BID_EXCEPTION);
-        if(bid.getId() == null) throw new WebApplicationException(INVALID_BID_EXCEPTION);
         if(bid.getAuctionId() == null) throw new WebApplicationException(INVALID_BID_EXCEPTION);
         if(bid.getUserId() == null) throw new WebApplicationException(INVALID_BID_EXCEPTION);
     }
 
     private void isQuestionValid(Question question){
-        if(question.getId() == null) throw  new WebApplicationException(INVALID_QUESTION_EXCEPTION);
         if(question.getAuctionId() == null) throw  new WebApplicationException(INVALID_QUESTION_EXCEPTION);
         if(question.getUserId() == null) throw  new WebApplicationException(INVALID_QUESTION_EXCEPTION);
         if(question.getMessage() == null) throw  new WebApplicationException(INVALID_QUESTION_EXCEPTION);
