@@ -17,7 +17,7 @@ docker system prune -a -f
 // BUILD IMAGE
 ////////////////////////
 
-docker build -t tjfernandes/scc2223-app "C:\Users\ticog\OneDrive\Ambiente de Trabalho\Faculdade\4ºAno\1º Semestre\SCC\SCC-Projeto"
+docker build -t tjfernandes/scc2223-app .
 
 
 
@@ -57,7 +57,7 @@ az container delete --resource-group scc23-rg-westeurope-rosatiago --name scc-ap
 // CREATE KUBERNETES
 /////////////////////
 
-az aks create --resource-group scc2223-cluster-rosatiago --name AKS-cluster-rosatiago --node-vm-size Standard_B2s --generate-ssh-keys --node-count 2 --service-principal c15c530e-cb9c-4441-851c-11c9b75492c9 --client-secret KTv8Q~X2giGgBnST8m8lHLretPtPDEZHAbRmscx0
+az aks create --resource-group scc2223-cluster-rosatiago --name AKS-cluster-rosatiago --node-vm-size Standard_B2s --generate-ssh-keys --node-count 2 --service-principal c15c530e-cb9c-4441-851c-11c9b75492c9 --client-secret 2.Q8Q~p_s7v6XUCEePPlShZK~AK9mGovBBUlecMs
 
 
 
@@ -73,7 +73,19 @@ az aks get-credentials --resource-group scc2223-cluster-rosatiago --name AKS-clu
 // APPLY YAML
 //////////////
 
-kubectl apply -f scc2223-app-rosatiago.yaml
+kubectl apply -f redis.yaml
+kubectl apply -f volume-claim.yaml
+kubectl apply -f scc-app.yaml
+
+
+///
+
+
+kubectl apply -f redis.yaml
+kubectl apply -f volume-claim.yaml
+kubectl apply -f mongo.yaml
+kubectl apply -f mongo-express.yaml
+kubectl apply -f scc-app.yaml
 
 
 
@@ -81,4 +93,4 @@ kubectl apply -f scc2223-app-rosatiago.yaml
 // DELETE KUBERNETES STUFF
 ///////////////////////////
 
-kubectl delete deployments,services,pods --all
+kubectl delete deployments,services,pods,pv,pvc --all

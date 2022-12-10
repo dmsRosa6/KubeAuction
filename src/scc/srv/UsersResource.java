@@ -158,7 +158,7 @@ public class UsersResource {
 
         if (user == null) throw new WebApplicationException();
 
-        pwdOK = user.getPwd().equals(Hash.of(login.getPwd()));
+        pwdOK = user.getPwd().equals(login.getPwd());
 
         if(pwdOK){
             String uid = UUID.randomUUID().toString();
