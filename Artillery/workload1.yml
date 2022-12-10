@@ -1,5 +1,5 @@
 config:
-  target: 'http://20.76.179.60/rest'
+  target: 'http://20.123.233.89/rest'
   http:
     timeout: 10
   plugins:
@@ -78,24 +78,14 @@ scenarios:
           json:
             userId: "{{ user }}"
             pwd: "{{ pwd }}"
-      - get:                          # Get info for initial page (assuming recent + popular)
-          url: "/auction/any/popular?st=0&len=20"
-          name: "GET:/auction/any/popular"
-          headers:
-            Accept: application/json
-      - get:                          # Get info for initial page (assuming recent + popular)
-          url: "/auction/any/recent?st=0&len=20"
-          name: "GET:/auction/any/recent"
-          headers:
-            Accept: application/json
-      - get:                          # Get following auctions
-          url: "/user/{{ user }}/following"
-          name: "GET:/user/*/following"
-          headers:
-            Accept: application/json
-          capture: 
-            json: "$"
-            as: "auctionsLst"
+      #- get:                          # Get following auctions
+          #url: "/user/{{ user }}/following"
+          #name: "GET:/user/*/following"
+          #headers:
+            #Accept: application/json
+          #capture: 
+            #json: "$"
+            #as: "auctionsLst"
       - loop:                                   # Check bids
         - get:                          # First: post image for the user
             url: "/media/{{ $loopElement.imageId }}"
@@ -118,7 +108,6 @@ scenarios:
               Content-Type: application/json
               Accept: application/json
             json:
-              id: "{{ bidId }}"
               auctionId: "{{ auctionId }}"
               amount: "{{ value }}"
               userId: "{{ user }}"
@@ -138,10 +127,10 @@ scenarios:
           json:
             userId: "{{ user }}"
             pwd: "{{ pwd }}"
-      - loop:               
+      - loop:       
         - function: "decideNextAction"
         - get:                          # Get user auctions
-            url: "/user/{{ user2 }}/auctions?auctionStatus=\"OPEN\""
+            url: "/user/{{ user2 }}/auctions?status=\"OPEN\""
             name: "GET:/user/*/auctions"
             headers:
               Accept: application/json
@@ -149,7 +138,7 @@ scenarios:
               json: "$"
               as: "auctionsLst"
             ifTrue: "nextAction == 2"
-        - post:                       # CREATE an auction; first post image
+        - post:                          # CREATE an auction; first post image
             url: "/media"
             name: "POST:/media"
             headers:
@@ -167,7 +156,6 @@ scenarios:
               Content-Type: application/json
               Accept: application/json
             json:
-              id: "{{ aucId }}"
               title: "{{ title }}"
               description: "{{ description }}"
               imageId: "{{ imageId }}"
@@ -175,7 +163,6 @@ scenarios:
               endDate: "{{ endTime }}"
               minimumPrice: "{{ minimumPrice }}"
               auctionStatus: "{{ status }}"
-              winnerBid: null
             ifTrue: "nextAction == 3"
         - get:                          # Call methods for displaying auction: image, top bid, messages
             url: "/media/{{ imageId }}"
@@ -193,14 +180,15 @@ scenarios:
               as: "bidsLst"
             ifTrue: "nextAction >= 4"
         - get:
-            url: "/auction/{{ auctionId }}/question"   # list questions
+            url: "/auction/{{ auctionId }}/question"   #get just top bid
             name: "GET:/auction/*/question"
             headers: 
               Accept: application/json
             capture: 
               json: "$"
-              as: "questionsLst"
+              as: "bidsLst"
             ifTrue: "nextAction >= 4"
+        - function: "decideToCoverBid"
         - post:                          # New bid     
             url: "/auction/{{ auctionId }}/bid"
             name: "POST:/auction/*/bid"
@@ -208,7 +196,6 @@ scenarios:
               Content-Type: application/json
               Accept: application/json
             json:
-              id: "{{ bidId }}"
               auctionId: "{{ auctionId }}"
               amount: "{{ value }}"
               userId: "{{ user }}"
@@ -221,10 +208,8 @@ scenarios:
               Content-Type: application/json
               Accept: application/json
             json:
-              id: "{{ questId }}"
               auctionId: "{{ auctionId }}" 
               userId: "{{ user }}" 
-              message: "{{ text }}" 
-              reply: null
+              message: "{{ text }}"
             ifTrue: "nextAction == 6"
         whileTrue: "random80"

@@ -40,3 +40,4 @@ spec:
   - port: 6379
   selector:
     app: redis-back
+    

@@ -19,6 +19,8 @@ docker system prune -a -f
 
 docker build -t tjfernandes/scc2223-app .
 
+docker build -t tjfernandes/artillery-testing .
+
 
 
 
@@ -27,13 +29,15 @@ docker build -t tjfernandes/scc2223-app .
 
 docker push tjfernandes/scc2223-app
 
+docker push tjfernandes/artillery-testing
+
 
 
 
 // RUN SERVER
 //////////////
 
-docker run --rm -p 8080:8080 tjfernandes/scc2223-app
+docker run --rm tjfernandes/artillery-testing
 
 
 
@@ -44,12 +48,25 @@ docker run --rm -p 8080:8080 tjfernandes/scc2223-app
 az container create --resource-group scc23-rg-westeurope-rosatiago --name scc-app-rosatiago --image tjfernandes/scc2223-app --ports 8080 --dns-name-label scc2223-rosatiago --environment-variables STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=sccstwesteuroperosatiago;AccountKey=bq5+Lo/AWlMcCoTicXbT7/8wUxGyuQqLf03iXB8mi02n3rS44FLpwYRdtWeKIs7dFwRZ6vYP4Rvt+ASty1Tnhw==;EndpointSuffix=core.windows.net REDIS_KEY=3QOxr5aszCmfPw7RsOrewaC4XC76eBCdxAzCaDFLGf0= DB_KEY=GtjMlyDJbmyujEUcwq0MitQtqCHlBfsUyd3rL7ehRbQ1E0amjuRovT19JcIQhDpyXRAWyxua69CeACDbMmVmMA==
 
 
+// CREATE ARTILLERY CONTAINER
+//////////////////////////////
+
+az container create --resource-group scc2223-cluster-rosatiago --name scc-artillery-rosatiago --image tjfernandes/artillery-testing --dns-name-label scc2223-artillery
+
 
 
 // REMOVE CONTAINER
 ////////////////////
 
 az container delete --resource-group scc23-rg-westeurope-rosatiago --name scc-app-rosatiago
+
+
+
+// REMOVE CONTAINER
+////////////////////
+
+az container delete --resource-group scc2223-cluster-rosatiago --name scc-artillery-rosatiago
+
 
 
 
