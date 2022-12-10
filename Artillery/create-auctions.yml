@@ -1,5 +1,5 @@
 config:
-  target: 'http://20.123.233.89/rest'
+  target: 'http://20.23.149.76/rest'
   http:
     timeout: 10
   plugins:
