@@ -70,9 +70,9 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 
 ---
 
-## 📁 **Data Structure**
+### 📁 **Data Structure**
 
-### **1. User**
+**User**
 
 ```json
 {
@@ -84,7 +84,7 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 }
 ```
 
-### **2. Auction**
+**Auction**
 
 ```json
   {
@@ -100,7 +100,7 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 }
 ```
 
-### **3. Bid**
+**Bid**
 
 ```json
  {
@@ -111,7 +111,7 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 }
 ```
 
-### **4. Login**
+###Login**
 
 ```json
 {
@@ -124,75 +124,101 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 ---
 ## 🚀 **Deployment**
 
-### **1. Build the Application**
+**1. Build the Application**
 To compile your application and create a JAR file, run the following command:
 
+```bash
 mvn clean compile package
+```
 
-### **2. Build Docker Images**
+**2. Build Docker Images**
 Build your Docker images for the application and the artillery testing service:
 
+```bash
 docker build -t yourusername/your-app-name .
 docker build -t yourusername/artillery-testing .
+```
 
-### **3. Push Docker Images to Repository**
+**3. Push Docker Images to Repository**
 Push the built images to your Docker repository:
 
+```bash
 docker push yourusername/your-app-name
 docker push yourusername/artillery-testing
+```
 
-### **4. Create Azure Resources**
+**4. Create Azure Resources**
 Use the Java management class to create necessary Azure resources:
 
+```bash
 java -cp target/your-app-name-1.0-jar-with-dependencies.jar your.package.AzureManagement
+```
 
-### **5. Deploy to Azure Container Instances**
+**5. Deploy to Azure Container Instances**
 Create an Azure container for your application:
 
+```bash
 az container create --resource-group your-resource-group --name your-app-container --image yourusername/your-app-name --ports 8080 --dns-name-label your-dns-label --environment-variables STORAGE_CONNECTION_STRING=YourConnectionString REDIS_KEY=YourRedisKey DB_KEY=YourDbKey
+```
 
 Create a container for artillery testing:
 
+```bash
 az container create --resource-group your-resource-group --name artillery-testing-container --image yourusername/artillery-testing --dns-name-label artillery-dns-label
+```
 
-### **6. Deploy to Azure Kubernetes Service (AKS)**
+**6. Deploy to Azure Kubernetes Service (AKS)**
 Create your AKS cluster:
 
+```bash
 az aks create --resource-group your-resource-group --name your-aks-cluster --node-vm-size Standard_B2s --generate-ssh-keys --node-count 2 --service-principal YourServicePrincipal --client-secret YourClientSecret
+```
 
 Get credentials for your AKS cluster:
 
+```bash
 az aks get-credentials --resource-group your-resource-group --name your-aks-cluster
+```
 
-### **7. Apply Kubernetes Configurations**
+**7. Apply Kubernetes Configurations**
 Deploy your services using the appropriate YAML files:
 
+```bash
 kubectl apply -f redis.yaml
 kubectl apply -f volume-claim.yaml
 kubectl apply -f mongo.yaml
 kubectl apply -f mongo-express.yaml
 kubectl apply -f your-app-name.yaml
+```
 
-### **8. Verify Deployment**
+**8. Verify Deployment**
 Check the status of your deployments:
 
+```bash
 kubectl get pods
 kubectl get services
+```
 
-### **9. Run Artillery Tests**
+**9. Run Artillery Tests**
 To run performance tests, use the following command:
 
+```bash
 artillery run test-images.yml
+```
 
-### **10. Clean Up**
+**10. Clean Up**
 To remove all deployments, services, and pods from Kubernetes:
 
+```bash
 kubectl delete deployments,services,pods,pv,pvc --all
+```
 
-### **11. Cleanup Docker Resources**
+**11. Cleanup Docker Resources**
 If you need to clean up unused Docker resources, you can run:
 
+```bash
 docker system prune -a -f
+```
 
 ### **Note**
 This project serves as a practical exercise to help you play around with cloud services, Docker, and Kubernetes.
