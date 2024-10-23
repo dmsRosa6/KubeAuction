@@ -68,8 +68,6 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 4. **Persistent Volume** 📂:
    - Media files (images/videos) are stored on a persistent volume in the Kubernetes cluster.
 
----
-
 ### 📁 **Data Structure**
 
 **User**
