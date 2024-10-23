@@ -219,4 +219,4 @@ docker system prune -a -f
 ```
 
 ### **Note**
-This project serves as a practical exercise to help you play around with cloud services, Docker, and Kubernetes.
+This project serves as a practical exercise to help me play around with cloud services, Docker, and Kubernetes.
