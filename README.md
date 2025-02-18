@@ -8,39 +8,39 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 
 ## **Features**
 
-### ✨ **1. Core Functionality**
-- Users can create and manage auctions 🎯.
-- Users can place bids on open auctions 🏷️💸.
-- Users can ask questions about auction items, and auction creators can reply 💬.
-- Supports media uploads (images/videos) for auctions and user profiles 🎥📸.
-- RESTful API built using **Java** with **Jakarta EE** ☕️ to manage:
+###  **1. Core Functionality**
+- Users can create and manage auctions .
+- Users can place bids on open auctions 🏷.
+- Users can ask questions about auction items, and auction creators can reply .
+- Supports media uploads (images/videos) for auctions and user profiles .
+- RESTful API built using **Java** with **Jakarta EE** to manage:
   - Users (`/rest/user`)
   - Auctions (`/rest/auction`)
   - Bids (`/rest/auction/{id}/bid`)
   - Questions (`/rest/auction/{id}/question`)
   - Media (`/rest/media`)
 
-### ⚡ **2. Deployment Features**
-- **Application and Redis deployment in Kubernetes** 🛠️: The backend server and Redis caching service are deployed using Docker containers in **Azure Kubernetes Service (AKS)**.
-- **Persistent Volume for Media Storage** 📂: Media files are stored in a persistent volume managed by Kubernetes.
-- **Artillery Testing** 🔫: The system's performance is tested under load using **Artillery**.
-- **MongoDB** 🍃 is used for storing structured data like users, auctions, bids, and questions.
+###  **2. Deployment Features**
+- **Application and Redis deployment in Kubernetes** : The backend server and Redis caching service are deployed using Docker containers in **Azure Kubernetes Service (AKS)**.
+- **Persistent Volume for Media Storage** : Media files are stored in a persistent volume managed by Kubernetes.
+- **Artillery Testing** : The system's performance is tested under load using **Artillery**.
+- **MongoDB**  is used for storing structured data like users, auctions, bids, and questions.
 
 ---
 
 ## **Technologies Used**
 
 ### 🖥️ **Backend Technologies**
-- **Java** with **Jakarta EE** ☕️ for the backend application.
-- **MongoDB** 🍃 for storing auction and user data.
-- **Redis** 🧠 for caching frequently accessed data.
-- **Azure Kubernetes Service (AKS)** ☁️ for container orchestration.
-- **Docker** 🐳 for containerizing the application and Redis.
+- **Java** with **Jakarta EE** for the backend application.
+- **MongoDB**  for storing auction and user data.
+- **Redis** for caching frequently accessed data.
+- **Azure Kubernetes Service (AKS)**  for container orchestration.
+- **Docker**  for containerizing the application and Redis.
 - **Persistent Volume (Kubernetes)** for media storage.
 
 ### 🧪 **Testing Tools**
 
-- **Artillery** 🔫: Artillery is a modern, powerful, and easy-to-use testing toolkit for HTTP, WebSocket, and Socket.io applications. It allows you to simulate real user behavior and measure the performance of your application under load.
+- **Artillery** : Artillery is a modern, powerful, and easy-to-use testing toolkit for HTTP, WebSocket, and Socket.io applications. It allows you to simulate real user behavior and measure the performance of your application under load.
 
   - **Key Features**:
     - **Load Testing**: Artillery can simulate thousands of virtual users, helping you evaluate how your application performs under heavy load. This is crucial for ensuring scalability and reliability.
@@ -57,18 +57,18 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 
 ## **System Architecture**
 
-### 🏗️ **Containers**
-1. **Backend Application Container** 🛠️:
+###  **Containers**
+1. **Backend Application Container** 🛠:
    - Handles API requests for managing auctions, users, bids, and media.
    - Exposes RESTful API endpoints using **Java/Jakarta EE** ☕️.
-2. **Redis Cache Container** 🧠:
+2. **Redis Cache Container** :
    - Manages the cache to improve performance, storing frequently accessed data.
-3. **MongoDB Container** 🍃:
+3. **MongoDB Container** :
    - Used as the primary database to store structured data for users, auctions, and bids.
-4. **Persistent Volume** 📂:
+4. **Persistent Volume** :
    - Media files (images/videos) are stored on a persistent volume in the Kubernetes cluster.
 
-### 📁 **Data Structure**
+### **Data Structures**
 
 **User**
 
@@ -120,7 +120,7 @@ This project is an auction system backend (like eBay) 🛍️, now focusing on d
 
 
 ---
-## 🚀 **Deployment**
+##  **Deployment**
 
 **1. Build the Application**
 To compile your application and create a JAR file, run the following command:
