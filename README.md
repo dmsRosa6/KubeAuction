@@ -1,4 +1,4 @@
-# **AucKube** - Auction System with Docker & Kubernetes Deployment
+# **KubeAuction** - Auction System with Docker & Kubernetes Deployment
 
 ## **Project Overview**
 
