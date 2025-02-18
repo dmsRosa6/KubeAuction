@@ -2,7 +2,7 @@
 
 ## **Project Overview**
 
-This project is an auction system backend (like eBay) 🛍️, now focusing on deploying it using **Docker** 🐳 and **Kubernetes** ☸️. The system allows users to create auctions, place bids, ask questions, and manage media (images/videos) 🖼️📹. In this version, the backend application is containerized and deployed on **Azure Kubernetes Service (AKS)** ☁️, using **Redis** for caching 🧠 and **Persistent Volumes** for media storage 🗃️.
+This project is an auction system backend (like eBay) 🛍, now focusing on deploying it using **Docker**  and **Kubernetes** . The system allows users to create auctions, place bids, ask questions, and manage media (images/videos) . In this version, the backend application is containerized and deployed on **Azure Kubernetes Service (AKS)** , using **Redis** for caching and **Persistent Volumes** for media storage .
 
 ---
 
