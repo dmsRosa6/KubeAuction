@@ -30,7 +30,7 @@ This project is an auction system backend (like eBay) 🛍, now focusing on depl
 
 ## **Technologies Used**
 
-### 🖥️ **Backend Technologies**
+### **Backend Technologies**
 - **Java** with **Jakarta EE** for the backend application.
 - **MongoDB**  for storing auction and user data.
 - **Redis** for caching frequently accessed data.
@@ -38,7 +38,7 @@ This project is an auction system backend (like eBay) 🛍, now focusing on depl
 - **Docker**  for containerizing the application and Redis.
 - **Persistent Volume (Kubernetes)** for media storage.
 
-### 🧪 **Testing Tools**
+### **Testing Tools**
 
 - **Artillery** : Artillery is a modern, powerful, and easy-to-use testing toolkit for HTTP, WebSocket, and Socket.io applications. It allows you to simulate real user behavior and measure the performance of your application under load.
 
