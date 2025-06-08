@@ -1,1 +1,0 @@
-Create a index on the email of user, check is this is done atelast

@@ -1,0 +1,44 @@
+package com.dmsrosa.kubeauction.database.dao.entity;
+
+import java.util.Date;
+import java.util.UUID;
+
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Document(collection = "auctions")
+public class AuctionEntity {
+
+    @Id
+    private ObjectId id;
+
+    private String title;
+
+    private String descr;
+
+    private UUID imageId;
+
+    @Indexed
+    private ObjectId ownerId;
+
+    private Date endDate;
+
+    private Double minimumPrice;
+
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    @Builder.Default
+    private Boolean ownerDeleted = false;
+}

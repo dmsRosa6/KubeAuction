@@ -1,0 +1,3 @@
+Check if the ids are actual empty. Using input DTO's solves this
+
+Create a index on the email of user, check is this is done atelast
