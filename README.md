@@ -2,18 +2,16 @@
 
 ## **Project Overview**
 
-This project is an auction system backend (like eBay) 🛍, now focusing on deploying it using **Docker**  and **Kubernetes** . The system allows users to create auctions, place bids, ask questions, and manage media (images/videos) . In this version, the backend application is containerized and deployed on **Azure Kubernetes Service (AKS)** , using **Redis** for caching and **Persistent Volumes** for media storage .
-
 ---
 
 ## **Features**
 
 ###  **1. Core Functionality**
 - Users can create and manage auctions .
-- Users can place bids on open auctions 🏷.
+- Users can place bids on open auctions .
 - Users can ask questions about auction items, and auction creators can reply .
 - Supports media uploads (images/videos) for auctions and user profiles .
-- RESTful API built using **Java** with **Jakarta EE** to manage:
+- RESTful API:
   - Users (`/rest/user`)
   - Auctions (`/rest/auction`)
   - Bids (`/rest/auction/{id}/bid`)
@@ -31,7 +29,6 @@ This project is an auction system backend (like eBay) 🛍, now focusing on depl
 ## **Technologies Used**
 
 ### **Backend Technologies**
-- **Java** with **Jakarta EE** for the backend application.
 - **MongoDB**  for storing auction and user data.
 - **Redis** for caching frequently accessed data.
 - **Azure Kubernetes Service (AKS)**  for container orchestration.
@@ -41,18 +38,6 @@ This project is an auction system backend (like eBay) 🛍, now focusing on depl
 ### **Testing Tools**
 
 - **Artillery** : Artillery is a modern, powerful, and easy-to-use testing toolkit for HTTP, WebSocket, and Socket.io applications. It allows you to simulate real user behavior and measure the performance of your application under load.
-
-  - **Key Features**:
-    - **Load Testing**: Artillery can simulate thousands of virtual users, helping you evaluate how your application performs under heavy load. This is crucial for ensuring scalability and reliability.
-    - **Scenario Definition**: You can define complex user scenarios in simple YAML format, including multiple requests and response validations, making it easy to model user workflows.
-    - **Metrics and Reporting**: Artillery provides detailed reports on response times, error rates, and throughput, allowing you to identify bottlenecks and optimize your application effectively.
-    - **Integration with CI/CD**: Artillery can be easily integrated into your continuous integration and deployment pipelines, enabling automated performance testing as part of your development workflow.
-
-  - **How to Use**:
-    1. Create a test configuration file (e.g., `test-images.yml`) where you define your test scenarios, including the API endpoints to test, the number of virtual users, and the duration of the test.
-    2. Run the tests using the command: `artillery run test-images.yml`. This will initiate the testing process and generate a report once the tests are complete.
-    3. Analyze the results to understand how well your application performs and where improvements may be needed.
-
 ---
 
 ## **System Architecture**
