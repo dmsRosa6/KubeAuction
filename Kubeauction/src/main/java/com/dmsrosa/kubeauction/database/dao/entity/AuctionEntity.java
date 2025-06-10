@@ -34,7 +34,7 @@ public class AuctionEntity {
 
     private Date endDate;
 
-    private Double minimumPrice;
+    private Integer minimumPrice;
 
     @Builder.Default
     private Boolean isDeleted = false;

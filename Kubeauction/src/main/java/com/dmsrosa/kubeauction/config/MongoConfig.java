@@ -1,4 +1,4 @@
-package com.dmsrosa.kubeauction.database.config;
+package com.dmsrosa.kubeauction.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 
 @Configuration
 @EnableMongoRepositories("com.dmsrosa.kubeauction.database.dao.repository")
-public class ApplicationConfig extends AbstractMongoClientConfiguration {
+public class MongoConfig extends AbstractMongoClientConfiguration {
 
     @Override
     protected String getDatabaseName() {

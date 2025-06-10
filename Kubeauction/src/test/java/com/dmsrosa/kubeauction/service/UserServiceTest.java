@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -21,7 +20,6 @@ import org.mockito.MockitoAnnotations;
 
 import com.dmsrosa.kubeauction.database.dao.entity.UserEntity;
 import com.dmsrosa.kubeauction.database.dao.repository.UserRepository;
-import com.dmsrosa.kubeauction.service.UserService;
 import com.dmsrosa.kubeauction.service.exception.ConflictException;
 import com.dmsrosa.kubeauction.service.exception.NotFoundException;
 
@@ -55,7 +53,7 @@ public class UserServiceTest {
 
                 when(userRepository.save(any(UserEntity.class))).thenReturn(savedUser);
 
-                UserEntity result = userService.register(name, email, nickname, pwd);
+                UserEntity result = userService.createUser(savedUser);
 
                 assertThat(result.getName()).isEqualTo(name);
                 assertThat(result.getEmail()).isEqualTo(email);
@@ -90,13 +88,13 @@ public class UserServiceTest {
 
                 when(userRepository.save(any(UserEntity.class))).thenReturn(user);
 
-                UserEntity result = userService.register(name, email, nickname, pwd);
+                UserEntity result = userService.createUser(user);
                 assertThat(result.getName()).isEqualTo(name);
                 assertThat(result.getId()).isNotNull();
 
                 when(userRepository.existsByEmail(email)).thenReturn(true);
 
-                assertThatThrownBy(() -> userService.register(name, email, nickname, pwd))
+                assertThatThrownBy(() -> userService.createUser(user))
                                 .isInstanceOf(ConflictException.class)
                                 .hasMessageContaining("User already exists");
 
@@ -238,7 +236,7 @@ public class UserServiceTest {
 
                 when(userRepository.save(any(UserEntity.class))).thenReturn(userAfter);
 
-                userService.deleteById(id);
+                userService.softDeleteUserById(id);
 
                 when(userRepository.findById(id)).thenReturn(Optional.of(userAfter));
 
@@ -274,7 +272,7 @@ public class UserServiceTest {
 
                 when(userRepository.findById(id)).thenReturn(Optional.of(userBefore));
 
-                userService.deleteById(id);
+                userService.softDeleteUserById(id);
 
                 when(userRepository.findById(id)).thenReturn(Optional.of(userAfter));
 
@@ -282,7 +280,7 @@ public class UserServiceTest {
 
                 assertThat(result.getIsDeleted()).isTrue();
 
-                assertThrows(NotFoundException.class, () -> userService.deleteById(id));
+                assertThrows(NotFoundException.class, () -> userService.softDeleteUserById(id));
                 verify(userRepository, times(3)).findById(id);
                 verify(userRepository, times(1)).save(any(UserEntity.class));
         }
@@ -315,7 +313,7 @@ public class UserServiceTest {
 
                 when(userRepository.save(any(UserEntity.class))).thenReturn(userAfter);
 
-                userService.deleteByEmail(email);
+                userService.softDeleteUserByEmail(email);
 
                 when(userRepository.findByEmail(email)).thenReturn(Optional.of(userAfter));
 
@@ -354,7 +352,7 @@ public class UserServiceTest {
 
                 when(userRepository.save(any(UserEntity.class))).thenReturn(userAfter);
 
-                userService.deleteByEmail(email);
+                userService.softDeleteUserByEmail(email);
 
                 when(userRepository.findByEmail(email)).thenReturn(Optional.of(userAfter));
 
@@ -362,7 +360,7 @@ public class UserServiceTest {
 
                 assertThat(result.getIsDeleted()).isTrue();
 
-                assertThrows(NotFoundException.class, () -> userService.deleteByEmail(email));
+                assertThrows(NotFoundException.class, () -> userService.softDeleteUserByEmail(email));
 
                 verify(userRepository, times(3)).findByEmail(email);
                 verify(userRepository, times(1)).save(any(UserEntity.class));
@@ -401,7 +399,7 @@ public class UserServiceTest {
 
                 when(userRepository.save(any(UserEntity.class))).thenReturn(userAfter);
 
-                UserEntity updated = userService.UpdateUserById(id, update);
+                UserEntity updated = userService.updateUserById(id, update);
 
                 when(userRepository.findById(id)).thenReturn(Optional.of(userAfter));
 
@@ -427,7 +425,7 @@ public class UserServiceTest {
 
                 when(userRepository.findById(id)).thenReturn(Optional.empty());
 
-                assertThrows(NotFoundException.class, () -> userService.UpdateUserById(id, update));
+                assertThrows(NotFoundException.class, () -> userService.updateUserById(id, update));
 
                 verify(userRepository, times(1)).findById(id);
                 verify(userRepository, never()).save(any());
@@ -466,7 +464,7 @@ public class UserServiceTest {
                 when(userRepository.findByEmail(email)).thenReturn(Optional.of(before));
                 when(userRepository.save(any(UserEntity.class))).thenReturn(after);
 
-                UserEntity result = userService.UpdateUserByEmail(email, update);
+                UserEntity result = userService.updateUserByEmail(email, update);
 
                 assertThat(result.getEmail()).isEqualTo("new@example.com");
                 assertThat(result.getNickname()).isEqualTo("newnick");
@@ -487,7 +485,7 @@ public class UserServiceTest {
 
                 when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
-                assertThrows(NotFoundException.class, () -> userService.UpdateUserByEmail(email, update));
+                assertThrows(NotFoundException.class, () -> userService.updateUserByEmail(email, update));
 
                 verify(userRepository, times(1)).findByEmail(email);
                 verify(userRepository, never()).save(any());

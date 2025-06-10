@@ -1,3 +1,9 @@
 Check if the ids are actual empty. Using input DTO's solves this
 
 Create a index on the email of user, check is this is done atelast
+
+change to manual cache chcking(for cache eviction)
+
+Tests for update auction
+
+bid Controller, and review controller

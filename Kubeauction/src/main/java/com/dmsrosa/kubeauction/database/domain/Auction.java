@@ -21,7 +21,7 @@ public class Auction {
 
     private Date endDate;
 
-    private Double minimumPrice;
+    private Integer minimumPrice;
 
     private String status;
 }
