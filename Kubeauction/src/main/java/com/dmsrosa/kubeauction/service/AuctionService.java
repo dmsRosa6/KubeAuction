@@ -6,9 +6,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,75 +14,84 @@ import com.dmsrosa.kubeauction.database.dao.entity.AuctionEntity;
 import com.dmsrosa.kubeauction.database.dao.repository.AuctionRepository;
 import com.dmsrosa.kubeauction.service.exception.NotFoundException;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AuctionService {
 
     private final AuctionRepository auctionRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final UserService userService;
 
-    public AuctionService(AuctionRepository auctionRepository, RedisTemplate<String, Object> redisTemplate) {
-        this.auctionRepository = auctionRepository;
-        this.redisTemplate = redisTemplate;
+    private String key(ObjectId id) {
+        return RedisConfig.AUCTIONS_PREFIX_DELIM + id.toHexString();
     }
 
-    @CachePut(value = "auctionCache", key = "#result.id")
     public AuctionEntity createAuction(AuctionEntity auction) {
-        return auctionRepository.save(auction);
+        userService.getUserById(auction.getOwnerId(), false);
+
+        AuctionEntity saved = auctionRepository.save(auction);
+        redisTemplate.opsForValue().set(key(saved.getId()), saved);
+        return saved;
     }
 
-    @Cacheable(value = "auctionCache", key = "#id")
-    public AuctionEntity getAuctionById(ObjectId id, boolean getDeleted) throws NotFoundException {
-        Optional<AuctionEntity> a = auctionRepository.findById(id);
-        if (a.isEmpty() || (!getDeleted && a.get().getIsDeleted()))
-            throw new NotFoundException("Auction not found.id=%s", id.toString());
-        return a.get();
+    public AuctionEntity getAuctionById(ObjectId id, boolean includeDeleted) {
+        String cacheKey = key(id);
+
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof AuctionEntity) {
+            AuctionEntity ae = (AuctionEntity) cached;
+            if (includeDeleted || !ae.getIsDeleted()) {
+                return ae;
+            }
+        }
+
+        Optional<AuctionEntity> o = auctionRepository.findById(id);
+        AuctionEntity entity = o.filter(a -> includeDeleted || !a.getIsDeleted())
+                .orElseThrow(() -> new NotFoundException("Auction not found.id=%s", id.toString()));
+
+        redisTemplate.opsForValue().set(cacheKey, entity);
+        return entity;
     }
 
-    // TODO CACHE EVICTION
-    public AuctionEntity updateAuctionById(ObjectId id, AuctionEntity update) {
-        AuctionEntity auction = this.getAuctionById(id, false);
+    public AuctionEntity updateAuctionById(ObjectId id, AuctionEntity updates) {
+        AuctionEntity existing = getAuctionById(id, false);
 
-        updateAuction(auction, update);
-        AuctionEntity savedUser = this.auctionRepository.save(auction);
+        if (updates.getTitle() != null)
+            existing.setTitle(updates.getTitle());
+        if (updates.getDescr() != null)
+            existing.setDescr(updates.getDescr());
+        if (updates.getImageId() != null)
+            existing.setImageId(updates.getImageId());
 
-        return savedUser;
+        AuctionEntity saved = auctionRepository.save(existing);
+
+        redisTemplate.opsForValue().set(key(id), saved);
+        return saved;
     }
 
-    @CacheEvict(value = "auctionCache", key = "#id")
-    public void softDeleteAuctionById(ObjectId id) throws NotFoundException {
-        AuctionEntity a = this.getAuctionById(id, false);
-        a.setIsDeleted(true);
-        this.auctionRepository.save(a);
+    public void softDeleteAuctionById(ObjectId id) {
+        AuctionEntity entity = getAuctionById(id, false);
+        entity.setIsDeleted(true);
+        auctionRepository.save(entity);
+
+        redisTemplate.delete(key(id));
     }
 
-    // TODO EVICTION
-    public void markOwnerDeletedByOwnerId(ObjectId ownerId) throws NotFoundException {
+    public void markOwnerDeletedByOwnerId(ObjectId ownerId) {
         List<AuctionEntity> list = auctionRepository.findByOwnerId(ownerId);
         if (list.isEmpty()) {
             throw new NotFoundException("No auctions found for user.id=%s", ownerId.toString());
         }
 
-        Map<String, Object> map = new HashMap<>();
-
-        list.forEach(auction -> {
-            auction.setOwnerDeleted(true);
-            map.put(auction.getId().toString(), auction);
-            redisTemplate.opsForValue().set(
-                    makeRedisKey(auction.getId().toString()),
-                    auction);
+        Map<String, Object> updates = new HashMap<>();
+        list.forEach(a -> {
+            a.setOwnerDeleted(true);
+            updates.put(key(a.getId()), a);
         });
 
-        redisTemplate.opsForValue().multiSet(map);
+        redisTemplate.opsForValue().multiSet(updates);
         auctionRepository.saveAll(list);
-    }
-
-    // private methods
-    private String makeRedisKey(String id) {
-        return RedisConfig.AUCTIONS_PREFIX_DELIM + id;
-    }
-
-    // TODO
-    private void updateAuction(AuctionEntity auction, AuctionEntity updates) {
-
     }
 }

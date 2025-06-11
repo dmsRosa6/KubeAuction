@@ -19,4 +19,6 @@ public class User {
     private String pwd;
 
     private UUID photoId;
+
+    private boolean isDeleted;
 }

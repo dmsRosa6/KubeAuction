@@ -24,4 +24,8 @@ public class Auction {
     private Integer minimumPrice;
 
     private String status;
+
+    private boolean isDeleted;
+
+    private boolean ownerDeleted;
 }

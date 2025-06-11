@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.bson.types.ObjectId;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -80,11 +79,11 @@ public class UserService {
         return u;
     }
 
-    @CacheEvict(value = "userCache", key = "#id")
     public void softDeleteUserById(ObjectId id) {
         UserEntity response = this.getUserById(id, false);
         response.setIsDeleted(true);
         this.userRepository.save(response);
+        redisTemplate.delete(makeRedisKey(id.toString(), false));
     }
 
     public void softDeleteUserByEmail(String email) {
@@ -94,23 +93,17 @@ public class UserService {
         redisTemplate.delete(makeRedisKey(email, true));
     }
 
-    @CachePut(value = "userCache", key = "#result.id")
     public UserEntity updateUserByEmail(String email, UserEntity update) {
         UserEntity user = this.getUserByEmail(email, false);
 
         updateUser(user, update);
         UserEntity savedUser = this.userRepository.save(user);
 
-        if (email.equals(savedUser.getEmail())) {
-            redisTemplate.opsForValue().set(
-                    makeRedisKey(email, true),
-                    savedUser);
-        }
+        redisTemplate.opsForValue().set(makeRedisKey(email, true), user);
 
         return savedUser;
     }
 
-    @CachePut(value = "userCache", key = "#result.id")
     public UserEntity updateUserById(ObjectId id, UserEntity update) {
         UserEntity user = this.getUserById(id, false);
 
@@ -121,9 +114,7 @@ public class UserService {
         updateUser(user, update);
         UserEntity savedUser = this.userRepository.save(user);
 
-        redisTemplate.opsForValue().set(
-                "userCache::email::" + savedUser.getEmail(),
-                savedUser);
+        redisTemplate.opsForValue().set(makeRedisKey(id.toString(), false), user);
 
         return savedUser;
     }

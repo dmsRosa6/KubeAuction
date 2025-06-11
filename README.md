@@ -1,207 +1,135 @@
-# **KubeAuction** - Auction System with Docker & Kubernetes Deployment
 
-## **Project Overview**
+# KubeAuction
 
----
+A Spring Boot microservice for managing auctions and bids with MongoDB persistence and Redis caching.
 
-## **Features**
+## Table of Contents
 
-###  **1. Core Functionality**
-- Users can create and manage auctions .
-- Users can place bids on open auctions .
-- Users can ask questions about auction items, and auction creators can reply .
-- Supports media uploads (images/videos) for auctions and user profiles .
-- RESTful API:
-  - Users (`/rest/user`)
-  - Auctions (`/rest/auction`)
-  - Bids (`/rest/auction/{id}/bid`)
-  - Questions (`/rest/auction/{id}/question`)
-  - Media (`/rest/media`)
-
-###  **2. Deployment Features**
-- **Application and Redis deployment in Kubernetes** : The backend server and Redis caching service are deployed using Docker containers in **Azure Kubernetes Service (AKS)**.
-- **Persistent Volume for Media Storage** : Media files are stored in a persistent volume managed by Kubernetes.
-- **Artillery Testing** : The system's performance is tested under load using **Artillery**.
-- **MongoDB**  is used for storing structured data like users, auctions, bids, and questions.
+- [Features](#features)  
+- [Tech Stack](#tech-stack)  
+- [Getting Started](#getting-started)  
+  - [Prerequisites](#prerequisites)  
+  - [Configuration](#configuration)  
+  - [Running the App](#running-the-app)  
+- [API Endpoints](#api-endpoints)  
+  - [Users](#users)  
+  - [Auctions](#auctions)  
+  - [Bids](#bids)  
+- [Data Model](#data-model)  
+- [Caching Strategy](#caching-strategy)  
+- [Aggregation Examples](#aggregation-examples)  
+- [Error Handling](#error-handling)  
 
 ---
 
-## **Technologies Used**
+## Features
 
-### **Backend Technologies**
-- **MongoDB**  for storing auction and user data.
-- **Redis** for caching frequently accessed data.
-- **Azure Kubernetes Service (AKS)**  for container orchestration.
-- **Docker**  for containerizing the application and Redis.
-- **Persistent Volume (Kubernetes)** for media storage.
-
-### **Testing Tools**
-
-- **Artillery** : Artillery is a modern, powerful, and easy-to-use testing toolkit for HTTP, WebSocket, and Socket.io applications. It allows you to simulate real user behavior and measure the performance of your application under load.
----
-
-## **System Architecture**
-
-###  **Containers**
-1. **Backend Application Container** 🛠:
-   - Handles API requests for managing auctions, users, bids, and media.
-   - Exposes RESTful API endpoints using **Java/Jakarta EE** ☕️.
-2. **Redis Cache Container** :
-   - Manages the cache to improve performance, storing frequently accessed data.
-3. **MongoDB Container** :
-   - Used as the primary database to store structured data for users, auctions, and bids.
-4. **Persistent Volume** :
-   - Media files (images/videos) are stored on a persistent volume in the Kubernetes cluster.
-
-### **Data Structures**
-
-**User**
-
-```json
-{
-    "id": "1",
-    "name": "José",
-    "nickname": "Zé",
-    "pwd": "eusouoze",
-    "photoId": "39363F1A472827A12BAF9C483E9741607115F243"
-}
-```
-
-**Auction**
-
-```json
-  {
-    "id": "1",
-    "title": "Seat ibiza",
-    "description": "Seat ibiza de 98",
-    "imageId": "39363F1A472827A12BAF9C483E9741607115F243",
-    "ownerId": "1",
-    "endDate": "2022-10-25T18:25:43.511Z",
-    "minimumPrice": "15.5",
-    "status": "1",
-    "winnerId": "null"
-}
-```
-
-**Bid**
-
-```json
- {
-    "id": "1",
-    "auctionId": "1",
-    "value": "50",
-    "userId": "1"
-}
-```
-
-**Login**
-
-```json
-{
-    "userId": "1",
-    "pwd": "eusouoze"
-}
-```
-
+- CRUD for Users, Auctions, and Bids  
+- Soft-delete support (flags instead of physical delete)  
+- MongoDB for primary storage  
+- Redis for manual caching with TTL  
+- Aggregation pipelines for querying bids by user or auction  
+- Centralized exception handling via `@RestControllerAdvice`  
 
 ---
-##  **Deployment**
 
-**1. Build the Application**
-To compile your application and create a JAR file, run the following command:
+## Tech Stack
 
-```bash
-mvn clean compile package
-```
+- Java 21 
+- Spring Boot  
+- MongoDB  
+- Redis  
 
-**2. Build Docker Images**
-Build your Docker images for the application and the artillery testing service:
+---
 
-```bash
-docker build -t yourusername/your-app-name .
-docker build -t yourusername/artillery-testing .
-```
+## Getting Started
 
-**3. Push Docker Images to Repository**
-Push the built images to your Docker repository:
+### Prerequisites
 
-```bash
-docker push yourusername/your-app-name
-docker push yourusername/artillery-testing
-```
+### Configuration
 
-**4. Create Azure Resources**
-Use the Java management class to create necessary Azure resources:
+## API Endpoints
+    
+### Users
 
-```bash
-java -cp target/your-app-name-1.0-jar-with-dependencies.jar your.package.AzureManagement
-```
+-- **POST** `/api/users`  
+  Create a new user.
 
-**5. Deploy to Azure Container Instances**
-Create an Azure container for your application:
+- **GET** `/api/users/{id}`  
+  Retrieve a user by ID.
 
-```bash
-az container create --resource-group your-resource-group --name your-app-container --image yourusername/your-app-name --ports 8080 --dns-name-label your-dns-label --environment-variables STORAGE_CONNECTION_STRING=YourConnectionString REDIS_KEY=YourRedisKey DB_KEY=YourDbKey
-```
+- **PUT** `/api/users/{id}`  
+  Update user details (soft-delete flag is not modified here).
 
-Create a container for artillery testing:
+- **DELETE** `/api/users/{id}`  
+  Soft-delete user; also marks their bids and auctions as deleted.
 
-```bash
-az container create --resource-group your-resource-group --name artillery-testing-container --image yourusername/artillery-testing --dns-name-label artillery-dns-label
-```
+### Auctions
 
-**6. Deploy to Azure Kubernetes Service (AKS)**
-Create your AKS cluster:
+- **POST** `/api/auctions`
+  Create a new post
 
-```bash
-az aks create --resource-group your-resource-group --name your-aks-cluster --node-vm-size Standard_B2s --generate-ssh-keys --node-count 2 --service-principal YourServicePrincipal --client-secret YourClientSecret
-```
+- **GET** `/api/auctions/{id}`
+  Retrieve an auction by ID
 
-Get credentials for your AKS cluster:
+- **PUT** `/api/auctions/{id}`
+  Update an auction by ID like it's done for users.
 
-```bash
-az aks get-credentials --resource-group your-resource-group --name your-aks-cluster
-```
+- **DELETE** `/api/auctions/{id}`
+  Deletes an auction by ID (soft delete), also marks all related bids.
 
-**7. Apply Kubernetes Configurations**
-Deploy your services using the appropriate YAML files:
+### Bids
+- **POST** `/api/bids`
+  Create a new bids 
 
-```bash
-kubectl apply -f redis.yaml
-kubectl apply -f volume-claim.yaml
-kubectl apply -f mongo.yaml
-kubectl apply -f mongo-express.yaml
-kubectl apply -f your-app-name.yaml
-```
+- **GET** `/api/bids/{id}`
+  Retrieve an bids by ID
 
-**8. Verify Deployment**
-Check the status of your deployments:
+- **PUT** `/api/bids/{id}`
+  Update an bids by ID like it's done for users.
 
-```bash
-kubectl get pods
-kubectl get services
-```
+- **DELETE** `/api/bids/{id}`
+  Deletes an bids by ID (soft delete), also marks all related .
 
-**9. Run Artillery Tests**
-To run performance tests, use the following command:
+## Data Model
 
-```bash
-artillery run test-images.yml
-```
+### UserEntity
+- `ObjectId id`  
+- `String name`  
+- `String email`  
+- `String pwd` (bcrypt-hashed)  
+- `Boolean isDeleted`  
 
-**10. Clean Up**
-To remove all deployments, services, and pods from Kubernetes:
+### AuctionEntity
+- `ObjectId id`  
+- `String title`  
+- `String descr`  
+- `UUID imageId`  
+- `ObjectId ownerId`  
+- `Date endDate`  
+- `Double minimumPrice`  
+- `Boolean isDeleted`  
+- `Boolean ownerDeleted`  
 
-```bash
-kubectl delete deployments,services,pods,pv,pvc --all
-```
+### BidEntity
+- `ObjectId id`  
+- `ObjectId auctionId`  
+- `ObjectId userId`  
+- `int value`  
+- `Date createdAt`  
+- `Boolean isDeleted`  
+- `Boolean userDeleted`  
+- `Boolean auctionDeleted`  
+## Caching Strategy
 
-**11. Cleanup Docker Resources**
-If you need to clean up unused Docker resources, you can run:
+All manual Redis caching uses keys in the form:
 
-```bash
-docker system prune -a -f
-```
+- Users: `user:{id}`
+- Auctions: `auctions:{id}`
+- Bids: `bids:{id}`
 
-### **Note**
-This project serves as a practical exercise to help me play around with cloud services, Docker, and Kubernetes.
+On reads (e.g. `findById`), the service first attempts to load from Redis; on cache miss, it falls back to MongoDB and then caches the result with a TTL.
+
+On create/update/delete operations, the service writes through to both MongoDB and Redis (or evicts the key on delete) to keep cache and database in sync.
+
+## Testing

@@ -3,77 +3,107 @@ package com.dmsrosa.kubeauction.service;
 import java.util.List;
 
 import org.bson.types.ObjectId;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.dmsrosa.kubeauction.config.MongoConfig;
 import com.dmsrosa.kubeauction.config.RedisConfig;
 import com.dmsrosa.kubeauction.database.dao.entity.BidEntity;
 import com.dmsrosa.kubeauction.database.dao.repository.BidRepository;
 import com.dmsrosa.kubeauction.service.exception.NotFoundException;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class BidService {
 
     private final BidRepository bidRepository;
+    private final AuctionService auctionService;
+    private final UserService userService;
+    private final MongoTemplate mongoTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public BidService(BidRepository bidRepository, RedisTemplate<String, Object> redisTemplate) {
-        this.bidRepository = bidRepository;
-        this.redisTemplate = redisTemplate;
+    private String redisKey(ObjectId id) {
+        return RedisConfig.BIDS_PREFIX_DELIM + id.toHexString();
     }
 
-    public void markUserDeletedByUserId(ObjectId userId) throws NotFoundException {
-        List<BidEntity> list = bidRepository.findByUserId(userId);
-
-        if (list.isEmpty()) {
-            throw new NotFoundException("No bids found for user.id=%s", userId.toString());
+    public void markUserDeletedByUserId(ObjectId userId) {
+        List<BidEntity> bids = bidRepository.findByUserId(userId);
+        if (bids.isEmpty()) {
+            throw new NotFoundException("No bids found for user.id=%s", userId.toHexString());
         }
-
-        list.forEach(bid -> {
+        bids.forEach(bid -> {
             bid.setUserDeleted(true);
-            redisTemplate.opsForValue().set(makeRedisKey(bid.getId().toString()), bid, RedisConfig.BIDS_DEFAULT_TTL);
+            redisTemplate.opsForValue().set(redisKey(bid.getId()), bid, RedisConfig.BIDS_DEFAULT_TTL);
         });
-        bidRepository.saveAll(list);
+        bidRepository.saveAll(bids);
     }
 
-    public void markAuctionDeletedByAuctionId(ObjectId auctionId) throws NotFoundException {
-        List<BidEntity> list = bidRepository.findByAuctionId(auctionId);
-        if (list.isEmpty()) {
-            throw new NotFoundException("No bids found for auction.id=%s", auctionId.toString());
+    public void markAuctionDeletedByAuctionId(ObjectId auctionId) {
+        List<BidEntity> bids = bidRepository.findByAuctionId(auctionId);
+        if (bids.isEmpty()) {
+            throw new NotFoundException("No bids found for auction.id=%s", auctionId.toHexString());
         }
-
-        list.forEach(bid -> {
+        bids.forEach(bid -> {
             bid.setAuctionDeleted(true);
-            redisTemplate.opsForValue().set(makeRedisKey(bid.getId().toString()), bid, RedisConfig.BIDS_DEFAULT_TTL);
+            redisTemplate.opsForValue().set(redisKey(bid.getId()), bid, RedisConfig.BIDS_DEFAULT_TTL);
         });
-        bidRepository.saveAll(list);
+        bidRepository.saveAll(bids);
     }
 
-    @CachePut(value = "bidCache", key = "#result.id")
     public BidEntity createBid(BidEntity newBid) {
-        return bidRepository.save(newBid);
+        // validate references
+        userService.getUserById(newBid.getUserId(), false);
+        auctionService.getAuctionById(newBid.getAuctionId(), false);
+        BidEntity saved = bidRepository.save(newBid);
+        redisTemplate.opsForValue().set(redisKey(saved.getId()), saved, RedisConfig.BIDS_DEFAULT_TTL);
+        return saved;
     }
 
-    public void deleteBidById(ObjectId bidId) throws NotFoundException {
+    public void deleteBidById(ObjectId bidId) {
         BidEntity bid = bidRepository.findById(bidId)
-                .orElseThrow(() -> new NotFoundException("Bid with id=%s not found", bidId.toString()));
-
+                .orElseThrow(() -> new NotFoundException("Bid with id=%s not found", bidId.toHexString()));
         bid.setIsDeleted(true);
-        bidRepository.save(bid);
-
-        redisTemplate.opsForValue().set(makeRedisKey(bidId.toString()), bid, RedisConfig.BIDS_DEFAULT_TTL);
+        BidEntity saved = bidRepository.save(bid);
+        redisTemplate.opsForValue().set(redisKey(bidId), saved, RedisConfig.BIDS_DEFAULT_TTL);
     }
 
-    @Cacheable(value = "bidCache", key = "#id")
-    public BidEntity findBidById(ObjectId id) throws NotFoundException {
-        return bidRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Bid with id=%s not found", id.toString()));
+    public BidEntity findBidById(ObjectId id) {
+        String key = redisKey(id);
+        Object cached = redisTemplate.opsForValue().get(key);
+        if (cached instanceof BidEntity) {
+            return (BidEntity) cached;
+        }
+        BidEntity bid = bidRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Bid with id=%s not found", id.toHexString()));
+        redisTemplate.opsForValue().set(key, bid, RedisConfig.BIDS_DEFAULT_TTL);
+        return bid;
     }
 
-    // private methods
-    private String makeRedisKey(String id) {
-        return RedisConfig.BIDS_PREXIX_DELIM + id;
+    public List<BidEntity> getAuctionBids(ObjectId auctionId) {
+        auctionService.getAuctionById(auctionId, false);
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.match(
+                        Criteria.where("auctionDeleted").is(false)
+                                .and("auctionId").is(auctionId)));
+        AggregationResults<BidEntity> results = mongoTemplate.aggregate(agg, MongoConfig.BIDS_DB,
+                BidEntity.class);
+        return results.getMappedResults();
+    }
+
+    public List<BidEntity> getUserBids(ObjectId userId) {
+        userService.getUserById(userId, false);
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.match(
+                        Criteria.where("userDeleted").is(false)
+                                .and("userId").is(userId)));
+        AggregationResults<BidEntity> results = mongoTemplate.aggregate(agg, MongoConfig.BIDS_DB,
+                BidEntity.class);
+        return results.getMappedResults();
     }
 }

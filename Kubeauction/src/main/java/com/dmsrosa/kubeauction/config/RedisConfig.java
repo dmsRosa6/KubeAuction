@@ -30,7 +30,7 @@ public class RedisConfig {
 
     public static final String DELIM = "::";
 
-    public static final String BIDS_PREXIX_DELIM = BIDS_DEFAULT_PREFIX + DELIM;
+    public static final String BIDS_PREFIX_DELIM = BIDS_DEFAULT_PREFIX + DELIM;
     public static final String AUCTIONS_PREFIX_DELIM = AUCTIONS_DEFAULT_PREFIX + DELIM;
     public static final String USERS_PREFIX_DELIM = USERS_DEFAULT_PREFIX + DELIM;
 
