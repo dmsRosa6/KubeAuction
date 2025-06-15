@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: kubeauction-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - /tmp/kubeauction/mongo:/data/db
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+  redis:
+    image: redis:7
+    container_name: kubeauction-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - /tmp/kubeauction/redis:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+
+  #TODO I Should probabily use better credentials, for now it will suffice
+  minio:
+    image: minio/minio:latest
+    container_name: kubeauction-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - /tmp/kubeauction/minio:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M

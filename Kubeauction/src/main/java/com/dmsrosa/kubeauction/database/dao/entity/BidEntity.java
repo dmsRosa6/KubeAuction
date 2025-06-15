@@ -1,5 +1,6 @@
 package com.dmsrosa.kubeauction.database.dao.entity;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import org.bson.types.ObjectId;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Document(collection = "bids")
-public class BidEntity {
+public class BidEntity implements Serializable {
 
     @Id
     private ObjectId id;

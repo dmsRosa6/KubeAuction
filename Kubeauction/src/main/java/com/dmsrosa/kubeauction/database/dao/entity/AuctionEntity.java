@@ -1,5 +1,6 @@
 package com.dmsrosa.kubeauction.database.dao.entity;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 @Document(collection = "auctions")
-public class AuctionEntity {
+public class AuctionEntity implements Serializable {
 
     @Id
     private ObjectId id;

@@ -1,7 +1,8 @@
 package com.dmsrosa.kubeauction.controller;
 
+import java.net.URI;
+
 import org.bson.types.ObjectId;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,28 +38,34 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserResponseDto> createUser(@RequestBody CreateUserDto user) {
         UserEntity created = userService.createUser(CreateUserDto.ToUserEntity(user));
-        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponseDto.toUserResponseDto(created));
+        URI location = URI.create("/api/users/" + created.getId());
+
+        return ResponseEntity
+                .created(location)
+                .body(UserResponseDto.toUserResponseDto(created));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable ObjectId id) {
-        return ResponseEntity.ok(UserResponseDto.toUserResponseDto(userService.getUserById(id, false)));
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable String id) {
+        ObjectId oid = new ObjectId(id);
+        return ResponseEntity.ok(UserResponseDto.toUserResponseDto(userService.getUserById(oid, false)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDto> updateUserById(
-            @PathVariable ObjectId id,
+            @PathVariable String id,
             @RequestBody UpdateUserDto updates) {
-
-        UserEntity updated = userService.updateUserById(id, UpdateUserDto.ToUserEntity(updates));
+        ObjectId oid = new ObjectId(id);
+        UserEntity updated = userService.updateUserById(oid, UpdateUserDto.ToUserEntity(updates));
         return ResponseEntity.ok(UserResponseDto.toUserResponseDto(updated));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable ObjectId id) {
-        userService.softDeleteUserById(id);
-        bidService.markUserDeletedByUserId(id);
-        auctionService.markOwnerDeletedByOwnerId(id);
+    public ResponseEntity<Void> deleteUserById(@PathVariable String id) {
+        ObjectId oid = new ObjectId(id);
+        userService.softDeleteUserById(oid);
+        bidService.markUserDeletedByUserId(oid);
+        auctionService.markOwnerDeletedByOwnerId(oid);
         return ResponseEntity.noContent().build();
     }
 

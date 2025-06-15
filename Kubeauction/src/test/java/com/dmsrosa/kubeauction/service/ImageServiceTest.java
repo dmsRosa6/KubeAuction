@@ -1,49 +1,84 @@
 package com.dmsrosa.kubeauction.service;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
+import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
-@ExtendWith(MockitoExtension.class)
-public class ImageServiceTest {
+class ImageServiceTest {
 
-    @InjectMocks
     private ImageService imageService;
+    private Path tempDir;
 
-    @Test
-    public void loadImage_shouldReturnResource_whenFileExists() throws Exception {
+    @BeforeEach
+    void setUp() throws IOException {
+        tempDir = Files.createTempDirectory("image-test-dir");
+        imageService = new ImageService() {
+            @Override
+            public String saveImage(MultipartFile file, String filename) throws IOException {
+                Path filePath = tempDir.resolve(filename);
+                file.transferTo(filePath.toFile());
+                return filePath.toString();
+            }
 
-        String filename = "test.txt";
-        Path basePath = Paths.get("src/test/resources/uploads");
-        Path testFilePath = basePath.resolve(filename);
-        Files.createDirectories(basePath);
-        Files.write(testFilePath, "dummy data".getBytes());
-
-        Resource result = imageService.loadImage(basePath, filename);
-
-        assertNotNull(result);
-        assertTrue(result.exists());
-        assertEquals(filename, result.getFilename());
-
-        Files.deleteIfExists(testFilePath);
+            @Override
+            public Resource loadImage(Path path, String filename) throws IOException {
+                Path filePath = path.resolve(filename).normalize();
+                if (!Files.exists(filePath)) {
+                    throw new FileNotFoundException("File not found: " + filename);
+                }
+                return new UrlResource(filePath.toUri());
+            }
+        };
     }
 
     @Test
-    public void loadImage_shouldThrow_whenFileDoesNotExist() {
-        String filename = "nonexistent.png";
-        Path basePath = Paths.get("src/test/resources/uploads");
+    void testSaveImage() throws IOException {
+        byte[] content = "dummy image content".getBytes();
+        MockMultipartFile mockFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", content);
 
-        assertThrows(FileNotFoundException.class, () -> imageService.loadImage(basePath, filename));
+        imageService.saveImage(mockFile, "test.jpg");
+
+        Path savedPath = tempDir.resolve("test.jpg");
+        assertTrue(Files.exists(savedPath));
+        assertEquals("dummy image content", Files.readString(savedPath));
+    }
+
+    @Test
+    void testLoadImageSuccess() throws IOException {
+        Path filePath = tempDir.resolve("load.jpg");
+        Files.writeString(filePath, "loaded content");
+
+        Resource resource = imageService.loadImage(tempDir, "load.jpg");
+
+        assertTrue(resource.exists());
+        assertEquals("load.jpg", resource.getFilename());
+    }
+
+    @Test
+    void testLoadImageNotFound() {
+        Exception exception = assertThrows(IOException.class, () -> imageService.loadImage(tempDir, "not_found.jpg"));
+
+        assertTrue(exception.getMessage().contains("File not found"));
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        Files.walk(tempDir)
+                .map(Path::toFile)
+                .sorted((a, b) -> -a.compareTo(b)) // delete children first
+                .forEach(File::delete);
     }
 }

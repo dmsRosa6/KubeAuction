@@ -21,6 +21,6 @@ public class CreateUserDto {
 
     public static UserEntity ToUserEntity(CreateUserDto user) {
         return UserEntity.builder().email(user.getEmail()).name(user.getName()).nickname(user.getNickname())
-                .pwd(user.getNickname()).photoId(user.getPhotoId()).build();
+                .pwd(user.getPwd()).photoId(user.getPhotoId()).build();
     }
 }

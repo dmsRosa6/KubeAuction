@@ -3,6 +3,8 @@ package com.dmsrosa.kubeauction.service;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.bson.types.ObjectId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -11,13 +13,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
+import com.dmsrosa.kubeauction.config.RedisConfig;
 import com.dmsrosa.kubeauction.database.dao.entity.BidEntity;
 import com.dmsrosa.kubeauction.database.dao.repository.BidRepository;
 import com.dmsrosa.kubeauction.service.exception.NotFoundException;
@@ -30,9 +37,26 @@ class BidServiceTest {
     @InjectMocks
     private BidService bidService;
 
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
+    @Mock
+    private ValueOperations<String, Object> valueOps;
+
+    private ObjectId bidId;
+    private BidEntity bid;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        bidId = new ObjectId();
+        bid = BidEntity.builder()
+                .id(bidId)
+                .auctionId(new ObjectId())
+                .userId(new ObjectId())
+                .value(123)
+                .build();
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOps);
     }
 
     @Test
@@ -169,4 +193,38 @@ class BidServiceTest {
         verify(bidRepository, times(1)).saveAll(anyList());
     }
 
+    @Test
+    void findBidById_CacheHit() {
+        when(valueOps.get(RedisConfig.BIDS_PREFIX_DELIM + bidId.toHexString())).thenReturn(bid);
+
+        BidEntity result = bidService.findBidById(bidId);
+
+        assertThat(result).isSameAs(bid);
+        verify(bidRepository, never()).findById(any());
+    }
+
+    @Test
+    void findBidById_CacheMiss_thenDbAndCache() {
+        when(valueOps.get(anyString())).thenReturn(null);
+        when(bidRepository.findById(bidId)).thenReturn(Optional.of(bid));
+
+        BidEntity result = bidService.findBidById(bidId);
+
+        assertThat(result).isSameAs(bid);
+        verify(bidRepository).findById(bidId);
+    }
+
+    @Test
+    void findBidById_NotFound() {
+        when(valueOps.get(anyString())).thenReturn(null);
+        when(bidRepository.findById(bidId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> {
+            bidService.findBidById(bidId);
+        })
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Bid with id=");
+
+        verify(bidRepository).findById(bidId);
+    }
 }

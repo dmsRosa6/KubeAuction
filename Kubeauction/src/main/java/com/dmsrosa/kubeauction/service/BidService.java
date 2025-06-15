@@ -34,9 +34,7 @@ public class BidService {
 
     public void markUserDeletedByUserId(ObjectId userId) {
         List<BidEntity> bids = bidRepository.findByUserId(userId);
-        if (bids.isEmpty()) {
-            throw new NotFoundException("No bids found for user.id=%s", userId.toHexString());
-        }
+
         bids.forEach(bid -> {
             bid.setUserDeleted(true);
             redisTemplate.opsForValue().set(redisKey(bid.getId()), bid, RedisConfig.BIDS_DEFAULT_TTL);
@@ -46,9 +44,7 @@ public class BidService {
 
     public void markAuctionDeletedByAuctionId(ObjectId auctionId) {
         List<BidEntity> bids = bidRepository.findByAuctionId(auctionId);
-        if (bids.isEmpty()) {
-            throw new NotFoundException("No bids found for auction.id=%s", auctionId.toHexString());
-        }
+
         bids.forEach(bid -> {
             bid.setAuctionDeleted(true);
             redisTemplate.opsForValue().set(redisKey(bid.getId()), bid, RedisConfig.BIDS_DEFAULT_TTL);

@@ -81,9 +81,6 @@ public class AuctionService {
 
     public void markOwnerDeletedByOwnerId(ObjectId ownerId) {
         List<AuctionEntity> list = auctionRepository.findByOwnerId(ownerId);
-        if (list.isEmpty()) {
-            throw new NotFoundException("No auctions found for user.id=%s", ownerId.toString());
-        }
 
         Map<String, Object> updates = new HashMap<>();
         list.forEach(a -> {

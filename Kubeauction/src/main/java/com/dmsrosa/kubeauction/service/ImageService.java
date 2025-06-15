@@ -14,18 +14,22 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class ImageService {
 
-    private static final String IMAGE_DIR = "/app/uploads"; // mount point inside container
+    private final Path basePath;
+
+    public ImageService() {
+        this.basePath = Paths.get("/app/uploads");
+    }
+
+    public ImageService(Path basePath) {
+        this.basePath = basePath;
+    }
 
     public String saveImage(MultipartFile file, String filename) throws IOException {
-        Path uploadPath = Paths.get(IMAGE_DIR);
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        if (!Files.exists(basePath)) {
+            Files.createDirectories(basePath);
         }
-
-        Path filePath = uploadPath.resolve(filename);
+        Path filePath = basePath.resolve(filename);
         file.transferTo(filePath.toFile());
-
         return filePath.toString();
     }
 
@@ -35,5 +39,9 @@ public class ImageService {
             throw new FileNotFoundException("File not found: " + filename);
         }
         return new UrlResource(filePath.toUri());
+    }
+
+    public Path getBasePath() {
+        return this.basePath;
     }
 }

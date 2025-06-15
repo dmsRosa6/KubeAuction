@@ -17,7 +17,7 @@ public class CreateAuctionDto {
     private String title;
     private String descr;
     private UUID imageId;
-    private ObjectId ownerId;
+    private String ownerId;
     private Date endDate;
     private Integer minimumPrice;
 
@@ -26,7 +26,7 @@ public class CreateAuctionDto {
                 .title(dto.getTitle())
                 .descr(dto.getDescr())
                 .imageId(dto.getImageId())
-                .ownerId(dto.getOwnerId())
+                .ownerId(new ObjectId(dto.getOwnerId()))
                 .endDate(dto.getEndDate())
                 .minimumPrice(dto.getMinimumPrice())
                 .build();

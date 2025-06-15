@@ -17,7 +17,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
+import com.dmsrosa.kubeauction.config.RedisConfig;
 import com.dmsrosa.kubeauction.database.dao.entity.UserEntity;
 import com.dmsrosa.kubeauction.database.dao.repository.UserRepository;
 import com.dmsrosa.kubeauction.service.exception.ConflictException;
@@ -30,9 +33,30 @@ public class UserServiceTest {
         @InjectMocks
         private UserService userService;
 
+        @Mock
+        private ValueOperations<String, Object> valueOps;
+
+        @Mock
+        private RedisTemplate<String, Object> redisTemplate;
+
+        private ObjectId userId;
+        private UserEntity user;
+
         @BeforeEach
-        void setup() {
+        void setUp() {
                 MockitoAnnotations.openMocks(this);
+                userId = new ObjectId();
+                user = UserEntity.builder()
+                                .id(userId)
+                                .name("Alice")
+                                .email("alice@example.com")
+                                .nickname("ally")
+                                .pwd("hashed")
+                                .photoId(UUID.randomUUID())
+                                .isDeleted(false)
+                                .build();
+
+                when(redisTemplate.opsForValue()).thenReturn(valueOps);
         }
 
         @Test
@@ -415,7 +439,7 @@ public class UserServiceTest {
         }
 
         @Test
-        void updateUserById_NotFound_ThrowsNotFound() {
+        void updateUserById_NotFound() {
                 ObjectId id = new ObjectId();
                 UserEntity update = UserEntity.builder()
                                 .email("new@example.com")
@@ -475,7 +499,7 @@ public class UserServiceTest {
         }
 
         @Test
-        void updateUserByEmail_NotFound_ThrowsNotFound() {
+        void updateUserByEmail_NotFound_NotFound() {
                 String email = "bob@example.com";
                 UserEntity update = UserEntity.builder()
                                 .email("new@example.com")
@@ -490,4 +514,29 @@ public class UserServiceTest {
                 verify(userRepository, times(1)).findByEmail(email);
                 verify(userRepository, never()).save(any());
         }
+
+        @Test
+        void getUserById_CacheHit() {
+                String key = RedisConfig.USERS_PREFIX_DELIM + userId.toHexString();
+                when(valueOps.get(key)).thenReturn(user);
+
+                UserEntity result = userService.getUserById(userId, false);
+
+                assertThat(result).isSameAs(user);
+                verify(userRepository, never()).findById(any());
+        }
+
+        @Test
+        void getUserById_CacheMiss_thenDbAndCache() {
+                String key = RedisConfig.USERS_PREFIX_DELIM + userId.toHexString();
+                when(valueOps.get(key)).thenReturn(null);
+                when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+                UserEntity result = userService.getUserById(userId, false);
+
+                assertThat(result).isSameAs(user);
+                verify(userRepository).findById(userId);
+                verify(valueOps).set(key, user);
+        }
+
 }
