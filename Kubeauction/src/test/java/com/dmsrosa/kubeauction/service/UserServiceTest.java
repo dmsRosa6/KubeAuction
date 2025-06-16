@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.dmsrosa.kubeauction.config.RedisConfig;
 import com.dmsrosa.kubeauction.database.dao.entity.UserEntity;
@@ -27,6 +28,10 @@ import com.dmsrosa.kubeauction.service.exception.ConflictException;
 import com.dmsrosa.kubeauction.service.exception.NotFoundException;
 
 public class UserServiceTest {
+
+        @Mock
+        private PasswordEncoder passwordEncoder;
+
         @Mock
         private UserRepository userRepository;
 
@@ -76,13 +81,14 @@ public class UserServiceTest {
                                 .build();
 
                 when(userRepository.save(any(UserEntity.class))).thenReturn(savedUser);
+                when(passwordEncoder.encode("hashed")).thenReturn("encoded-newpwd");
 
                 UserEntity result = userService.createUser(savedUser);
 
                 assertThat(result.getName()).isEqualTo(name);
                 assertThat(result.getEmail()).isEqualTo(email);
                 assertThat(result.getNickname()).isEqualTo(nickname);
-                assertThat(result.getPwd()).isEqualTo(pwd);
+                assertThat(result.getPwd()).isEqualTo("encoded-newpwd");
                 assertThat(result.getId()).isNotNull();
                 assertThat(result.getIsDeleted()).isEqualTo(false);
 
@@ -173,9 +179,7 @@ public class UserServiceTest {
 
                 when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
-                UserEntity response = userService.getUserById(user.getId(), false);
-
-                assertThat(response).isEqualTo(null);
+                assertThrows(NotFoundException.class, () -> userService.getUserById(user.getId(), false));
                 verify(userRepository, times(1)).findById(id);
         }
 
@@ -227,9 +231,7 @@ public class UserServiceTest {
 
                 when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
 
-                UserEntity response = userService.getUserByEmail(user.getEmail(), false);
-
-                assertThat(response).isEqualTo(null);
+                assertThrows(NotFoundException.class, () -> userService.getUserByEmail(user.getEmail(), false));
                 verify(userRepository, times(1)).findByEmail(email);
         }
 
@@ -344,7 +346,7 @@ public class UserServiceTest {
                 UserEntity result = userService.getUserByEmail(email, true);
 
                 assertThat(result.getIsDeleted()).isTrue();
-                verify(userRepository, times(2)).findById(id);
+                verify(userRepository, times(2)).findByEmail(email);
                 verify(userRepository, times(1)).save(any(UserEntity.class));
         }
 
@@ -398,13 +400,12 @@ public class UserServiceTest {
                                 .name("Bob")
                                 .email("email@email.com")
                                 .nickname("bobby")
-                                .pwd("hashed")
+                                .pwd("secret")
                                 .photoId(UUID.randomUUID())
                                 .isDeleted(false)
                                 .build();
 
                 UserEntity update = UserEntity.builder()
-                                .email("newemail@email.com")
                                 .nickname("lovesydneysweeney123")
                                 .pwd("secret")
                                 .build();
@@ -412,27 +413,24 @@ public class UserServiceTest {
                 UserEntity userAfter = UserEntity.builder()
                                 .id(id)
                                 .name("Bob")
-                                .email("newemail@email.com")
+                                .email("email@email.com")
                                 .nickname("lovesydneysweeney123")
-                                .pwd("secret")
-                                .photoId(userBefore.getPhotoId())
-                                .isDeleted(true)
+                                .pwd("encoded-newpwd")
+                                .photoId(UUID.randomUUID())
+                                .isDeleted(false)
                                 .build();
 
                 when(userRepository.findById(id)).thenReturn(Optional.of(userBefore));
-
-                when(userRepository.save(any(UserEntity.class))).thenReturn(userAfter);
+                when(passwordEncoder.encode("secret")).thenReturn("encoded-newpwd");
+                when(userRepository.save(any())).thenReturn(userAfter);
 
                 UserEntity updated = userService.updateUserById(id, update);
-
-                when(userRepository.findById(id)).thenReturn(Optional.of(userAfter));
 
                 UserEntity result = userService.getUserById(id, false);
 
                 assertThat(result.getName()).isEqualTo(updated.getName());
                 assertThat(result.getNickname()).isEqualTo(updated.getNickname());
-                assertThat(result.getEmail()).isEqualTo(updated.getEmail());
-                assertThat(result.getPwd()).isEqualTo(updated.getPwd());
+                assertThat(result.getPwd()).isEqualTo("encoded-newpwd");
 
                 verify(userRepository, times(2)).findById(id);
                 verify(userRepository, times(1)).save(any(UserEntity.class));
@@ -480,11 +478,11 @@ public class UserServiceTest {
                                 .name("Bob")
                                 .email("new@example.com")
                                 .nickname("newnick")
-                                .pwd("newpwd")
+                                .pwd("encoded-newpwd")
                                 .photoId(before.getPhotoId())
                                 .isDeleted(false)
                                 .build();
-
+                when(passwordEncoder.encode("newpwd")).thenReturn("encoded-newpwd");
                 when(userRepository.findByEmail(email)).thenReturn(Optional.of(before));
                 when(userRepository.save(any(UserEntity.class))).thenReturn(after);
 
@@ -492,7 +490,7 @@ public class UserServiceTest {
 
                 assertThat(result.getEmail()).isEqualTo("new@example.com");
                 assertThat(result.getNickname()).isEqualTo("newnick");
-                assertThat(result.getPwd()).isEqualTo("newpwd");
+                assertThat(result.getPwd()).isEqualTo("encoded-newpwd");
 
                 verify(userRepository, times(1)).findByEmail(email);
                 verify(userRepository, times(1)).save(any());
@@ -517,7 +515,7 @@ public class UserServiceTest {
 
         @Test
         void getUserById_CacheHit() {
-                String key = RedisConfig.USERS_PREFIX_DELIM + userId.toHexString();
+                String key = RedisConfig.USERS_PREFIX_DELIM + userId.toString();
                 when(valueOps.get(key)).thenReturn(user);
 
                 UserEntity result = userService.getUserById(userId, false);
@@ -528,7 +526,7 @@ public class UserServiceTest {
 
         @Test
         void getUserById_CacheMiss_thenDbAndCache() {
-                String key = RedisConfig.USERS_PREFIX_DELIM + userId.toHexString();
+                String key = RedisConfig.USERS_PREFIX_DELIM + userId.toString();
                 when(valueOps.get(key)).thenReturn(null);
                 when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 

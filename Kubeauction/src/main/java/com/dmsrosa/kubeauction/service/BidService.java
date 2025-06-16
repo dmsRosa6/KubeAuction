@@ -29,7 +29,7 @@ public class BidService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     private String redisKey(ObjectId id) {
-        return RedisConfig.BIDS_PREFIX_DELIM + id.toHexString();
+        return RedisConfig.BIDS_PREFIX_DELIM + id.toString();
     }
 
     public void markUserDeletedByUserId(ObjectId userId) {
@@ -47,37 +47,40 @@ public class BidService {
 
         bids.forEach(bid -> {
             bid.setAuctionDeleted(true);
-            redisTemplate.opsForValue().set(redisKey(bid.getId()), bid, RedisConfig.BIDS_DEFAULT_TTL);
+            redisTemplate.opsForValue().set(redisKey(bid.getId()), bid);
         });
         bidRepository.saveAll(bids);
     }
 
     public BidEntity createBid(BidEntity newBid) {
-        // validate references
         userService.getUserById(newBid.getUserId(), false);
         auctionService.getAuctionById(newBid.getAuctionId(), false);
         BidEntity saved = bidRepository.save(newBid);
-        redisTemplate.opsForValue().set(redisKey(saved.getId()), saved, RedisConfig.BIDS_DEFAULT_TTL);
+        redisTemplate.opsForValue().set(redisKey(saved.getId()), saved);
         return saved;
     }
 
     public void deleteBidById(ObjectId bidId) {
         BidEntity bid = bidRepository.findById(bidId)
-                .orElseThrow(() -> new NotFoundException("Bid with id=%s not found", bidId.toHexString()));
+                .orElseThrow(() -> new NotFoundException("Bid with id=%s not found", bidId.toString()));
+
         bid.setIsDeleted(true);
-        BidEntity saved = bidRepository.save(bid);
-        redisTemplate.opsForValue().set(redisKey(bidId), saved, RedisConfig.BIDS_DEFAULT_TTL);
+        bidRepository.save(bid);
+
+        redisTemplate.delete(redisKey(bidId));
     }
 
-    public BidEntity findBidById(ObjectId id) {
+    public BidEntity findBidById(ObjectId id, boolean getIsDeleted) {
         String key = redisKey(id);
         Object cached = redisTemplate.opsForValue().get(key);
-        if (cached instanceof BidEntity) {
-            return (BidEntity) cached;
+        if (cached instanceof BidEntity bidEntity) {
+            return bidEntity;
         }
-        BidEntity bid = bidRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Bid with id=%s not found", id.toHexString()));
-        redisTemplate.opsForValue().set(key, bid, RedisConfig.BIDS_DEFAULT_TTL);
+
+        BidEntity bid = bidRepository.findById(id).filter(o -> getIsDeleted || !o.getIsDeleted())
+                .orElseThrow(() -> new NotFoundException("Bid with id=%s not found", id.toString()));
+
+        redisTemplate.opsForValue().set(key, bid);
         return bid;
     }
 

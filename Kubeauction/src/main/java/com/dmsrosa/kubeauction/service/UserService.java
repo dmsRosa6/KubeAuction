@@ -29,7 +29,7 @@ public class UserService {
     }
 
     private String keyById(ObjectId id) {
-        return RedisConfig.USERS_PREFIX_DELIM + id.toHexString();
+        return RedisConfig.USERS_PREFIX_DELIM + id.toString();
     }
 
     private String keyByEmail(String email) {

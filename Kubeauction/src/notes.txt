@@ -1,11 +1,9 @@
-unitary Tests for update auction
-I probabily should have a way to protect myself from incosistency between cache and db
 I probabily need to review the controllers and test everything all together
 more unitary Tests
 integration tests
 deploy 
 image check for the create methods
-Create a index on the email of user, check is this is done atelast
 Notification and notification service
 handle with outbids and managin them
 Kubernetes
+Bids and auctions business logic

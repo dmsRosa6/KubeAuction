@@ -11,6 +11,7 @@ import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -33,6 +34,9 @@ public class AuctionServiceTest {
 
         @Mock
         private AuctionRepository auctionRepository;
+
+        @Mock
+        private UserService userService;
 
         @Mock
         private RedisTemplate<String, Object> redisTemplate;
@@ -81,7 +85,7 @@ public class AuctionServiceTest {
                                 .build();
 
                 when(auctionRepository.save(any(AuctionEntity.class))).thenReturn(auction);
-
+                when(userService.getUserById(any(), anyBoolean())).thenReturn(null);
                 AuctionEntity result = auctionService.createAuction(auction);
 
                 assertThat(result).isNotNull();
@@ -198,7 +202,7 @@ public class AuctionServiceTest {
 
         @Test
         void getAuctionById_CacheHit() {
-                when(valueOperations.get(RedisConfig.AUCTIONS_PREFIX_DELIM + id.toHexString())).thenReturn(auction);
+                when(valueOperations.get(RedisConfig.AUCTIONS_PREFIX_DELIM + id.toString())).thenReturn(auction);
 
                 AuctionEntity result = auctionService.getAuctionById(id, false);
 
@@ -215,7 +219,7 @@ public class AuctionServiceTest {
 
                 assertThat(result).isSameAs(auction);
                 verify(auctionRepository).findById(id);
-                verify(valueOperations).set(RedisConfig.AUCTIONS_PREFIX_DELIM + id.toHexString(), auction);
+                verify(valueOperations).set(RedisConfig.AUCTIONS_PREFIX_DELIM + id.toString(), auction);
         }
 
         @Test
@@ -258,6 +262,6 @@ public class AuctionServiceTest {
                 auctionService.softDeleteAuctionById(id);
 
                 verify(auctionRepository).save(argThat(a -> a.getIsDeleted()));
-                verify(redisTemplate).delete("auctions::" + id.toHexString());
+                verify(redisTemplate).delete("auctionCache::" + id.toString());
         }
 }

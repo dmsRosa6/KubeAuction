@@ -7,18 +7,25 @@ import org.bson.types.ObjectId;
 
 import com.dmsrosa.kubeauction.database.dao.entity.AuctionEntity;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateAuctionDto {
 
     private String title;
+
     private String descr;
+
     private UUID imageId;
+
     private String ownerId;
+
     private Date endDate;
+
     private Integer minimumPrice;
 
     public static AuctionEntity toAuctionEntity(CreateAuctionDto dto) {

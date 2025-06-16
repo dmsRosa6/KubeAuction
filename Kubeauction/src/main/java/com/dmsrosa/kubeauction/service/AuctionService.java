@@ -25,7 +25,7 @@ public class AuctionService {
     private final UserService userService;
 
     private String key(ObjectId id) {
-        return RedisConfig.AUCTIONS_PREFIX_DELIM + id.toHexString();
+        return RedisConfig.AUCTIONS_PREFIX_DELIM + id.toString();
     }
 
     public AuctionEntity createAuction(AuctionEntity auction) {

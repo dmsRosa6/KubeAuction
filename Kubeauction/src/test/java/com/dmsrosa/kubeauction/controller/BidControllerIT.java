@@ -31,78 +31,78 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureMockMvc
 class BidControllerIT {
 
-    @Autowired
-    MockMvc mockMvc;
-    @Autowired
-    ObjectMapper mapper;
+        @Autowired
+        MockMvc mockMvc;
+        @Autowired
+        ObjectMapper mapper;
 
-    @Test
-    void fullBidCrudFlow() throws Exception {
-        CreateUserDto createUser = new CreateUserDto();
-        createUser.setName("Bob");
-        createUser.setEmail("bob@example.com");
-        createUser.setPwd("password");
-        String userJson = mapper.writeValueAsString(createUser);
+        @Test
+        void fullBidCrudFlow() throws Exception {
+                CreateUserDto createUser = new CreateUserDto();
+                createUser.setName("Bob");
+                createUser.setEmail("bob@example.com");
+                createUser.setPwd("password");
+                String userJson = mapper.writeValueAsString(createUser);
 
-        String userBody = mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(userJson))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        UserResponseDto user = mapper.readValue(userBody, UserResponseDto.class);
-        String userId = user.getId();
-        ObjectId uoid = new ObjectId(userId);
+                String userBody = mockMvc.perform(post("/api/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(userJson))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+                UserResponseDto user = mapper.readValue(userBody, UserResponseDto.class);
+                String userId = user.getId();
+                ObjectId uoid = new ObjectId(userId);
 
-        Map<String, Object> auction = new HashMap<>();
-        auction.put("title", "Bid-Flow Auction");
-        auction.put("descr", "for bid test");
-        auction.put("imageId", UUID.randomUUID());
-        auction.put("ownerId", uoid.toHexString());
-        auction.put("endDate", Instant.now().plusSeconds(3600).toString());
-        auction.put("minimumPrice", 25.0);
-        String auctionJson = mapper.writeValueAsString(auction);
+                Map<String, Object> auction = new HashMap<>();
+                auction.put("title", "Bid-Flow Auction");
+                auction.put("descr", "for bid test");
+                auction.put("imageId", UUID.randomUUID());
+                auction.put("ownerId", uoid.toString());
+                auction.put("endDate", Instant.now().plusSeconds(3600).toString());
+                auction.put("minimumPrice", 25.0);
+                String auctionJson = mapper.writeValueAsString(auction);
 
-        String auctionBody = mockMvc.perform(post("/api/auctions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(auctionJson))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        AuctionResponseDto auctionResp = mapper.readValue(auctionBody, AuctionResponseDto.class);
-        String auctionId = auctionResp.getId();
+                String auctionBody = mockMvc.perform(post("/api/auctions")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(auctionJson))
+                                .andExpect(status().isCreated())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+                AuctionResponseDto auctionResp = mapper.readValue(auctionBody, AuctionResponseDto.class);
+                String auctionId = auctionResp.getId();
 
-        Map<String, Object> bidReq = new HashMap<>();
-        bidReq.put("userId", userId);
-        bidReq.put("auctionId", auctionId);
-        bidReq.put("value", 123);
-        String bidJson = mapper.writeValueAsString(bidReq);
+                Map<String, Object> bidReq = new HashMap<>();
+                bidReq.put("userId", userId);
+                bidReq.put("auctionId", auctionId);
+                bidReq.put("value", 123);
+                String bidJson = mapper.writeValueAsString(bidReq);
 
-        MvcResult bidResult = mockMvc.perform(post("/api/bids")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(bidJson))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.value").value(123))
-                .andReturn();
+                MvcResult bidResult = mockMvc.perform(post("/api/bids")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(bidJson))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").exists())
+                                .andExpect(jsonPath("$.value").value(123))
+                                .andReturn();
 
-        BidResponseDto bidResp = mapper.readValue(
-                bidResult.getResponse().getContentAsString(),
-                BidResponseDto.class);
-        String bidId = bidResp.getId();
+                BidResponseDto bidResp = mapper.readValue(
+                                bidResult.getResponse().getContentAsString(),
+                                BidResponseDto.class);
+                String bidId = bidResp.getId();
 
-        mockMvc.perform(get("/api/bids/{id}", bidId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(userId))
-                .andExpect(jsonPath("$.auctionId").value(auctionId))
-                .andExpect(jsonPath("$.value").value(123));
+                mockMvc.perform(get("/api/bids/{id}", bidId))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.userId").value(userId))
+                                .andExpect(jsonPath("$.auctionId").value(auctionId))
+                                .andExpect(jsonPath("$.value").value(123));
 
-        mockMvc.perform(delete("/api/bids/{id}", bidId))
-                .andExpect(status().isNoContent());
+                mockMvc.perform(delete("/api/bids/{id}", bidId))
+                                .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/bids/{id}", bidId))
-                .andExpect(status().isNotFound());
-    }
+                mockMvc.perform(get("/api/bids/{id}", bidId))
+                                .andExpect(status().isNotFound());
+        }
 }

@@ -3,7 +3,6 @@ package com.dmsrosa.kubeauction.controller;
 import java.net.URI;
 
 import org.bson.types.ObjectId;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +16,6 @@ import com.dmsrosa.kubeauction.database.dao.entity.BidEntity;
 import com.dmsrosa.kubeauction.dto.bid.BidResponseDto;
 import com.dmsrosa.kubeauction.dto.bid.CreateBidDto;
 import com.dmsrosa.kubeauction.service.BidService;
-import com.dmsrosa.kubeauction.service.exception.NotFoundException;
 
 @RestController
 @RequestMapping("/api/bids")
@@ -38,14 +36,11 @@ public class BidController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getBidById(@PathVariable String id) {
+    public ResponseEntity<BidResponseDto> getBidById(@PathVariable String id) {
         ObjectId oid = new ObjectId(id);
-        try {
-            BidEntity bid = bidService.findBidById(oid);
-            return ResponseEntity.ok(bid);
-        } catch (NotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        BidEntity r = bidService.findBidById(oid, false);
+        BidResponseDto bid = BidResponseDto.fromBidEntity(r);
+        return ResponseEntity.ok(bid);
     }
 
     @DeleteMapping("/{id}")

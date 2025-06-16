@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
@@ -36,6 +37,12 @@ class BidServiceTest {
 
     @InjectMocks
     private BidService bidService;
+
+    @Mock
+    private UserService userService;
+
+    @Mock
+    private AuctionService auctionService;
 
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
@@ -69,6 +76,8 @@ class BidServiceTest {
                 .build();
 
         when(bidRepository.save(newBid)).thenReturn(newBid);
+        when(userService.getUserById(any(), anyBoolean())).thenReturn(null);
+        when(auctionService.getAuctionById(any(), anyBoolean())).thenReturn(null);
 
         BidEntity result = bidService.createBid(newBid);
 
@@ -108,7 +117,7 @@ class BidServiceTest {
 
         when(bidRepository.findById(id)).thenReturn(Optional.of(bid));
 
-        BidEntity result = bidService.findBidById(id);
+        BidEntity result = bidService.findBidById(id, false);
 
         assertEquals(bid, result);
     }
@@ -118,7 +127,7 @@ class BidServiceTest {
         ObjectId id = new ObjectId();
         when(bidRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> bidService.findBidById(id));
+        assertThrows(NotFoundException.class, () -> bidService.findBidById(id, false));
     }
 
     @Test
@@ -195,9 +204,9 @@ class BidServiceTest {
 
     @Test
     void findBidById_CacheHit() {
-        when(valueOps.get(RedisConfig.BIDS_PREFIX_DELIM + bidId.toHexString())).thenReturn(bid);
+        when(valueOps.get(RedisConfig.BIDS_PREFIX_DELIM + bidId.toString())).thenReturn(bid);
 
-        BidEntity result = bidService.findBidById(bidId);
+        BidEntity result = bidService.findBidById(bidId, false);
 
         assertThat(result).isSameAs(bid);
         verify(bidRepository, never()).findById(any());
@@ -208,7 +217,7 @@ class BidServiceTest {
         when(valueOps.get(anyString())).thenReturn(null);
         when(bidRepository.findById(bidId)).thenReturn(Optional.of(bid));
 
-        BidEntity result = bidService.findBidById(bidId);
+        BidEntity result = bidService.findBidById(bidId, false);
 
         assertThat(result).isSameAs(bid);
         verify(bidRepository).findById(bidId);
@@ -220,7 +229,7 @@ class BidServiceTest {
         when(bidRepository.findById(bidId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> {
-            bidService.findBidById(bidId);
+            bidService.findBidById(bidId, false);
         })
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Bid with id=");

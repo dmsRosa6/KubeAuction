@@ -1,12 +1,19 @@
 package com.dmsrosa.kubeauction.dto.bid;
 
 import com.dmsrosa.kubeauction.database.dao.entity.BidEntity;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@JsonDeserialize(builder = BidResponseDto.BidResponseDtoBuilder.class)
+@NoArgsConstructor
+@AllArgsConstructor
 public class BidResponseDto {
     private String id;
 
@@ -21,6 +28,10 @@ public class BidResponseDto {
     private Boolean userDeleted;
 
     private Boolean auctionDeleted;
+
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class BidResponseDtoBuilder {
+    }
 
     public static BidResponseDto fromBidEntity(BidEntity bidEntity) {
         return BidResponseDto.builder()
