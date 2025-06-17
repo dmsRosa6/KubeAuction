@@ -1,20 +1,21 @@
 package com.dmsrosa.kubeauction.service;
 
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import io.minio.StatObjectArgs;
-import io.minio.errors.MinioException;
+import io.minio.errors.ErrorResponseException;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class ImageService {
@@ -22,49 +23,55 @@ public class ImageService {
     private final MinioClient minioClient;
     private final String bucketName = "images";
 
-    public ImageService() {
+    public ImageService(@Value("${minio.uri}") String uri,
+            @Value("${minio.user}") String user,
+            @Value("${minio.key}") String key) {
         this.minioClient = MinioClient.builder()
-                .endpoint("http://minio:9000") // or your MinIO URL
-                .credentials("minioadmin", "minioadmin")
+                .endpoint(uri)
+                .credentials(user, key)
                 .build();
+    }
 
+    @PostConstruct
+    public void ensureBucketExists() {
         try {
-            // create bucket if not exists
             boolean found = minioClient.bucketExists(
-                    io.minio.BucketExistsArgs.builder().bucket(bucketName).build());
+                    BucketExistsArgs.builder().bucket(bucketName).build());
             if (!found) {
-                minioClient.makeBucket(
-                        io.minio.MakeBucketArgs.builder().bucket(bucketName).build());
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
         } catch (Exception e) {
             throw new RuntimeException("Error initializing MinIO bucket", e);
         }
     }
 
-    public String saveImage(MultipartFile file, String filename) throws IOException {
+    public boolean imageExists(String filename) {
         try {
+            minioClient.statObject(StatObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(filename)
+                    .build());
+            return true;
+        } catch (ErrorResponseException e) {
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("Error checking if image exists", e);
+        }
+    }
+
+    public String saveImage(MultipartFile file, String filename) throws IOException {
+        try (InputStream inputStream = file.getInputStream()) {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
                             .object(filename)
-                            .stream(file.getInputStream(), file.getSize(), -1)
+                            .stream(inputStream, file.getSize(), -1)
                             .contentType(file.getContentType())
                             .build());
             return filename;
-        } catch (MinioException e) {
-            throw new IOException("Failed to upload to MinIO", e);
-        } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new IOException("Failed to upload image to MinIO", e);
         }
-
-        return null;
     }
 
     public InputStream loadImage(String filename) throws IOException {
@@ -74,19 +81,10 @@ public class ImageService {
                             .bucket(bucketName)
                             .object(filename)
                             .build());
-        } catch (MinioException e) {
-            throw new FileNotFoundException("File not found in MinIO: " + filename);
-        } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (ErrorResponseException e) {
+            throw new FileNotFoundException("Image not found in MinIO: " + filename);
+        } catch (Exception e) {
+            throw new IOException("Failed to load image from MinIO", e);
         }
-
-        return null;
     }
 }

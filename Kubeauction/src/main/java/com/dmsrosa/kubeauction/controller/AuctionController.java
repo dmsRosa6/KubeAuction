@@ -19,6 +19,8 @@ import com.dmsrosa.kubeauction.dto.auction.CreateAuctionDto;
 import com.dmsrosa.kubeauction.dto.auction.UpdateAuctionDto;
 import com.dmsrosa.kubeauction.service.AuctionService;
 import com.dmsrosa.kubeauction.service.BidService;
+import com.dmsrosa.kubeauction.service.ImageService;
+import com.dmsrosa.kubeauction.service.exception.InvalidAuctionException;
 
 @RestController
 @RequestMapping("/api/auctions")
@@ -26,15 +28,26 @@ public class AuctionController {
 
     private final AuctionService auctionService;
     private final BidService bidService;
+    private final ImageService imageService;
 
-    public AuctionController(AuctionService auctionService, BidService bidService) {
+    public AuctionController(AuctionService auctionService, BidService bidService, ImageService imageService) {
         this.auctionService = auctionService;
         this.bidService = bidService;
+        this.imageService = imageService;
+    }
+
+    private String toFilename(java.util.UUID uuid) {
+        return uuid.toString() + ".jpeg";
     }
 
     @PostMapping
     public ResponseEntity<AuctionResponseDto> createAuction(@RequestBody CreateAuctionDto dto) {
+        if (dto.getImageId() != null && !imageService.imageExists(toFilename(dto.getImageId()))) {
+            throw new InvalidAuctionException("Image does not exist.");
+        }
+
         AuctionEntity created = auctionService.createAuction(CreateAuctionDto.toAuctionEntity(dto));
+
         URI location = URI.create("/api/auctions/" + created.getId());
 
         return ResponseEntity.created(location).body(AuctionResponseDto.fromAuctionEntity(created));
@@ -50,6 +63,11 @@ public class AuctionController {
     @PutMapping("/{id}")
     public ResponseEntity<AuctionResponseDto> updateAuctionById(@PathVariable String id,
             @RequestBody UpdateAuctionDto dto) {
+
+        if (dto.getImageId() != null && !imageService.imageExists(toFilename(dto.getImageId()))) {
+            throw new InvalidAuctionException("Image does not exist.");
+        }
+
         ObjectId oid = new ObjectId(id);
         AuctionEntity updated = auctionService.updateAuctionById(oid, UpdateAuctionDto.toAuctionEntity(dto));
         return ResponseEntity.ok(AuctionResponseDto.fromAuctionEntity(updated));
