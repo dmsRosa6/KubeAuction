@@ -23,15 +23,11 @@ public class RedisConfig {
     public static final int AUCTIONS_DEFAULT_TTL = 1;
     public static final int USERS_DEFAULT_TTL = 1;
 
-    public static final String BIDS_DEFAULT_PREFIX = "bidCache";
-    public static final String AUCTIONS_DEFAULT_PREFIX = "auctionCache";
-    public static final String USERS_DEFAULT_PREFIX = "userCache";
-
+    public static final String BIDS_PREFIX_DELIM = "cache::bid::";
+    public static final String AUCTIONS_PREFIX_DELIM = "cache::auction::";
+    public static final String USERS_PREFIX_DELIM = "cache::user::";
+    public static final String AUCTIONS_JOB_PREFIX_DELIM = "job::auction::";
     public static final String DELIM = "::";
-
-    public static final String BIDS_PREFIX_DELIM = BIDS_DEFAULT_PREFIX + DELIM;
-    public static final String AUCTIONS_PREFIX_DELIM = AUCTIONS_DEFAULT_PREFIX + DELIM;
-    public static final String USERS_PREFIX_DELIM = USERS_DEFAULT_PREFIX + DELIM;
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory, ObjectMapper objectMapper) {

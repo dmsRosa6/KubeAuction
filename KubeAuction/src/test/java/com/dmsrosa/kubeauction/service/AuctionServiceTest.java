@@ -262,6 +262,6 @@ public class AuctionServiceTest {
                 auctionService.softDeleteAuctionById(id);
 
                 verify(auctionRepository).save(argThat(a -> a.getIsDeleted()));
-                verify(redisTemplate).delete("auctionCache::" + id.toString());
+                verify(redisTemplate).delete(RedisConfig.AUCTIONS_PREFIX_DELIM + id.toString());
         }
 }
