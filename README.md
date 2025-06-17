@@ -1,7 +1,7 @@
 
 # KubeAuction
 
-A Spring Boot microservice for managing auctions and bids with MongoDB persistence and Redis caching.
+A simple backend for a bidding platform. This is mainly a study project to understand a little better both Spring and Kubernetes.
 
 ## Table of Contents
 
