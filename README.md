@@ -17,9 +17,8 @@ A Spring Boot microservice for managing auctions and bids with MongoDB persisten
   - [Bids](#bids)  
 - [Data Model](#data-model)  
 - [Caching Strategy](#caching-strategy)  
-- [Aggregation Examples](#aggregation-examples)  
-- [Error Handling](#error-handling)  
-
+- [Testing](#testing)
+- [Docker and Kubernetes](#docker-and-kubernetes)  
 ---
 
 ## Features
@@ -120,6 +119,7 @@ A Spring Boot microservice for managing auctions and bids with MongoDB persisten
 - `Boolean isDeleted`  
 - `Boolean userDeleted`  
 - `Boolean auctionDeleted`  
+
 ## Caching Strategy
 
 All manual Redis caching uses keys in the form:
@@ -131,5 +131,11 @@ All manual Redis caching uses keys in the form:
 On reads (e.g. `findById`), the service first attempts to load from Redis; on cache miss, it falls back to MongoDB and then caches the result with a TTL.
 
 On create/update/delete operations, the service writes through to both MongoDB and Redis (or evicts the key on delete) to keep cache and database in sync.
-
+
 ## Testing
+- `Unit tests with Mockito & JUnit 5`
+- `Integration tests with @SpringBootTest & MockMvc`
+
+## Docker and Kubernetes
+
+This project is designed for local Kubernetes deployment using Kind. All necessary YAML manifests are provided under the `kubernetes/` directory.

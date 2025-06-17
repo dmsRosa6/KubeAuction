@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubeauction-app
+  namespace: kubeauction
+  labels:
+    app: kubeauction
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kubeauction
+  template:
+    metadata:
+      labels:
+        app: kubeauction
+    spec:
+      containers:
+      - name: kubeauction
+        image: your-docker-repo/kubeauction:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: kubeauction-config
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5

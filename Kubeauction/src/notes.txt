@@ -5,5 +5,7 @@ deploy
 image check for the create methods
 Notification and notification service
 handle with outbids and managin them
-Kubernetes
+Kuberneten
 Bids and auctions business logic
+kubernetes
+docker deploy
