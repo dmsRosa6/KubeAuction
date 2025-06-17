@@ -1,9 +1,15 @@
-FROM eclipse-temurin:21-jdk-jammy
+FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
-COPY target/kubeauction-0.0.1-SNAPSHOT.jar app.jar
+COPY . .
 
-EXPOSE 8080
+RUN ./mvnw clean package -DskipTests
+
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

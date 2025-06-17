@@ -1,6 +1,9 @@
 package com.dmsrosa.kubeauction.service;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -14,6 +17,7 @@ import com.dmsrosa.kubeauction.config.MongoConfig;
 import com.dmsrosa.kubeauction.config.RedisConfig;
 import com.dmsrosa.kubeauction.database.dao.entity.BidEntity;
 import com.dmsrosa.kubeauction.database.dao.repository.BidRepository;
+import com.dmsrosa.kubeauction.service.exception.InvalidBidException;
 import com.dmsrosa.kubeauction.service.exception.NotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -54,7 +58,23 @@ public class BidService {
 
     public BidEntity createBid(BidEntity newBid) {
         userService.getUserById(newBid.getUserId(), false);
-        auctionService.getAuctionById(newBid.getAuctionId(), false);
+
+        var auction = auctionService.getAuctionById(newBid.getAuctionId(), false);
+
+        if (auction.getEndDate().before(Date.from(Instant.now()))) {
+            throw new InvalidBidException("Auction is closed or deleted.");
+        }
+
+        if (newBid.getValue() < auction.getMinimumPrice()) {
+            throw new InvalidBidException("Bid is below the minimum price.");
+        }
+
+        Optional<BidEntity> highestBid = bidRepository.findTopByAuctionIdOrderByValueDesc(newBid.getAuctionId());
+
+        if (highestBid.isPresent() && newBid.getValue() <= highestBid.get().getValue()) {
+            throw new InvalidBidException("You must outbid the current highest bid.");
+        }
+
         BidEntity saved = bidRepository.save(newBid);
         redisTemplate.opsForValue().set(redisKey(saved.getId()), saved);
         return saved;
