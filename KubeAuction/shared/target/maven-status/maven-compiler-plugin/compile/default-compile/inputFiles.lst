@@ -1,0 +1,17 @@
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/repository/UserRepository.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/mapper/AuctionMapper.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/config/JacksonConfig.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/utils/Pair.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/mapper/BidMapper.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/redis/RedisConfig.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/domain/Auction.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/redis/RedisRepository.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/entity/UserEntity.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/repository/BidRepository.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/redis/dto/AuctionTask.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/mapper/UserMapper.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/repository/AuctionRepository.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/domain/Bid.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/entity/BidEntity.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/domain/User.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/entity/AuctionEntity.java
