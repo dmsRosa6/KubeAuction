@@ -14,6 +14,7 @@ import com.dmsrosa.kubeauction.shared.database.dao.repository.AuctionRepository;
 import com.dmsrosa.kubeauction.shared.database.domain.Auction;
 import com.dmsrosa.kubeauction.shared.mapper.AuctionMapper;
 import com.dmsrosa.kubeauction.shared.redis.RedisRepository;
+import com.mongodb.internal.connection.Time;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +39,7 @@ public class AuctionService {
         AuctionEntity saved = auctionRepository.save(AuctionMapper.toEntity(auction));
         Auction a = AuctionMapper.toDomain(saved);
         redis.redisSet(a.getId().toString(), saved);
+        redis.redisZAdd(RedisRepository.AUCTIONS_NOTIFICATIONS_KEY, a.getId().toString(), a.getEndDate().getTime());
         return a;
     }
 

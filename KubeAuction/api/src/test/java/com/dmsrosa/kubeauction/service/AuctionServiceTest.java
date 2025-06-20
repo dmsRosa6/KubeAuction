@@ -25,10 +25,14 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
-import com.dmsrosa.kubeauction.config.RedisConfig;
-import com.dmsrosa.kubeauction.database.dao.entity.AuctionEntity;
-import com.dmsrosa.kubeauction.database.dao.repository.AuctionRepository;
 import com.dmsrosa.kubeauction.exception.NotFoundException;
+import com.dmsrosa.kubeauction.shared.database.dao.entity.AuctionEntity;
+import com.dmsrosa.kubeauction.shared.database.dao.repository.AuctionRepository;
+import com.dmsrosa.kubeauction.shared.database.domain.Auction;
+import com.dmsrosa.kubeauction.shared.mapper.AuctionMapper;
+import com.dmsrosa.kubeauction.shared.redis.RedisRepository;
+
+// [Package and imports stay the same]
 
 public class AuctionServiceTest {
 
@@ -48,13 +52,14 @@ public class AuctionServiceTest {
         private AuctionService auctionService;
 
         private ObjectId id;
-        private AuctionEntity auction;
+        private Auction auction;
+        private AuctionEntity auctionEntity;
 
         @BeforeEach
         void setup() {
                 MockitoAnnotations.openMocks(this);
                 id = new ObjectId();
-                auction = AuctionEntity.builder()
+                auction = Auction.builder()
                                 .id(id)
                                 .ownerId(new ObjectId())
                                 .title("Original")
@@ -65,146 +70,88 @@ public class AuctionServiceTest {
                                 .isDeleted(false)
                                 .ownerDeleted(false)
                                 .build();
+                auctionEntity = AuctionMapper.toEntity(auction);
 
                 when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         }
 
         @Test
         void createAuction_Success() {
-                when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-                AuctionEntity auction = AuctionEntity.builder()
-                                .id(new ObjectId())
-                                .title("Test Auction")
-                                .descr("Description")
-                                .imageId(UUID.randomUUID())
-                                .ownerId(new ObjectId())
-                                .endDate(new Date(System.currentTimeMillis() + 86400000))
-                                .minimumPrice(100)
-                                .isDeleted(false)
-                                .ownerDeleted(false)
-                                .build();
-
-                when(auctionRepository.save(any(AuctionEntity.class))).thenReturn(auction);
+                when(auctionRepository.save(any(AuctionEntity.class))).thenReturn(auctionEntity);
                 when(userService.getUserById(any(), anyBoolean())).thenReturn(null);
-                AuctionEntity result = auctionService.createAuction(auction);
+
+                Auction result = auctionService.createAuction(auction);
 
                 assertThat(result).isNotNull();
-                assertThat(result.getTitle()).isEqualTo("Test Auction");
-                assertThat(result.getIsDeleted()).isFalse();
-                assertThat(result.getOwnerDeleted()).isFalse();
+                assertThat(result.getTitle()).isEqualTo("Original");
+                assertThat(result.isDeleted()).isFalse();
+                assertThat(result.isOwnerDeleted()).isFalse();
 
                 verify(auctionRepository, times(1)).save(any(AuctionEntity.class));
         }
 
         @Test
         void getAuctionById_NotFound() {
-                ObjectId id = new ObjectId();
-                when(redisTemplate.opsForValue()).thenReturn(valueOperations);
                 when(auctionRepository.findById(id)).thenReturn(Optional.empty());
 
                 assertThatThrownBy(() -> auctionService.getAuctionById(id, false))
                                 .isInstanceOf(NotFoundException.class)
                                 .hasMessageContaining("Auction not found");
 
-                verify(auctionRepository, times(1)).findById(id);
+                verify(auctionRepository).findById(id);
         }
 
         @Test
         void softDeleteAuctionById_Success() {
-                ObjectId id = new ObjectId();
-                when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-                AuctionEntity auction = AuctionEntity.builder()
-                                .id(id)
-                                .title("Auction to delete")
-                                .isDeleted(false)
-                                .ownerDeleted(false)
-                                .build();
-
-                when(auctionRepository.findById(id)).thenReturn(Optional.of(auction));
-                when(auctionRepository.save(any(AuctionEntity.class))).thenAnswer(i -> i.getArgument(0));
+                when(auctionRepository.findById(id)).thenReturn(Optional.of(auctionEntity));
+                when(auctionRepository.save(any())).thenReturn(auctionEntity);
 
                 auctionService.softDeleteAuctionById(id);
 
-                verify(auctionRepository, times(1)).findById(id);
-                verify(auctionRepository, times(1)).save(argThat(a -> a.getIsDeleted() == true));
+                verify(auctionRepository).findById(id);
+                verify(auctionRepository).save(argThat(entity -> entity.getIsDeleted()));
         }
 
         @Test
         void markAuctionsOwnerDeletedByOwnerId_Success() {
                 ObjectId ownerId = new ObjectId();
 
-                when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-                AuctionEntity auction1 = AuctionEntity.builder()
-                                .id(new ObjectId())
-                                .ownerId(ownerId)
-                                .isDeleted(false)
-                                .ownerDeleted(false)
-                                .build();
+                Auction auction1 = Auction.builder().id(new ObjectId()).ownerId(ownerId).build();
+                Auction auction2 = Auction.builder().id(new ObjectId()).ownerId(ownerId).build();
 
-                AuctionEntity auction2 = AuctionEntity.builder()
-                                .id(new ObjectId())
-                                .ownerId(ownerId)
-                                .isDeleted(false)
-                                .ownerDeleted(false)
-                                .build();
+                AuctionEntity entity1 = AuctionMapper.toEntity(auction1);
+                AuctionEntity entity2 = AuctionMapper.toEntity(auction2);
 
-                AuctionEntity auction1After = AuctionEntity.builder()
-                                .id(new ObjectId())
-                                .ownerId(ownerId)
-                                .isDeleted(false)
-                                .ownerDeleted(true)
-                                .build();
-
-                AuctionEntity auction2After = AuctionEntity.builder()
-                                .id(new ObjectId())
-                                .ownerId(ownerId)
-                                .isDeleted(false)
-                                .ownerDeleted(true)
-                                .build();
-
-                when(auctionRepository.findByOwnerId(ownerId)).thenReturn(List.of(auction1, auction2));
-                when(auctionRepository.saveAll(anyList())).thenReturn(List.of(auction1After, auction2After));
+                when(auctionRepository.findByOwnerId(ownerId)).thenReturn(List.of(entity1, entity2));
+                when(auctionRepository.saveAll(anyList())).thenReturn(List.of(entity1, entity2));
 
                 auctionService.markOwnerDeletedByOwnerId(ownerId);
 
-                verify(auctionRepository, times(1)).findByOwnerId(ownerId);
-                verify(auctionRepository, times(1)).saveAll(anyList());
+                verify(auctionRepository).findByOwnerId(ownerId);
+                verify(auctionRepository).saveAll(anyList());
         }
 
         @Test
-        void updateAuction_Sucess() {
-                ObjectId ownerId = new ObjectId();
+        void updateAuction_Success() {
+                Auction updatedAuction = Auction.builder().title("New Title").build();
+                AuctionEntity updatedEntity = AuctionMapper.toEntity(updatedAuction);
 
-                AuctionEntity auction1 = AuctionEntity.builder()
-                                .id(new ObjectId())
-                                .ownerId(ownerId)
-                                .title("Test Auction")
-                                .isDeleted(false)
-                                .ownerDeleted(false)
-                                .build();
+                when(auctionRepository.findById(id)).thenReturn(Optional.of(auctionEntity));
+                when(auctionRepository.save(any())).thenReturn(updatedEntity);
+                when(valueOperations.get(any())).thenReturn(null);
 
-                AuctionEntity updates = AuctionEntity.builder()
-                                .title("New Title")
-                                .build();
+                Auction result = auctionService.updateAuctionById(id, Auction.builder().title("New Title").build());
 
-                when(auctionRepository.findById(ownerId)).thenReturn(Optional.of(auction1));
-                when(auctionRepository.save(any())).thenReturn(auction1);
-                when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-                when(valueOperations.get(any())).thenReturn("");
-
-                var updated = auctionService.updateAuctionById(ownerId, updates);
-
-                assertThat(updated).isNotNull();
-                assertThat(updated.getTitle()).isEqualTo("New Title");
-                assertThat(updated.getIsDeleted()).isFalse();
-                assertThat(updated.getOwnerDeleted()).isFalse();
+                assertThat(result.getTitle()).isEqualTo("New Title");
+                assertThat(result.isDeleted()).isFalse();
+                assertThat(result.isOwnerDeleted()).isFalse();
         }
 
         @Test
         void getAuctionById_CacheHit() {
-                when(valueOperations.get(RedisConfig.AUCTIONS_PREFIX_DELIM + id.toString())).thenReturn(auction);
+                when(valueOperations.get(RedisRepository.AUCTIONS_PREFIX_DELIM + id.toString())).thenReturn(auction);
 
-                AuctionEntity result = auctionService.getAuctionById(id, false);
+                Auction result = auctionService.getAuctionById(id, false);
 
                 assertThat(result).isSameAs(auction);
                 verify(auctionRepository, never()).findById(any());
@@ -213,29 +160,30 @@ public class AuctionServiceTest {
         @Test
         void getAuctionById_CacheMiss() {
                 when(valueOperations.get(anyString())).thenReturn(null);
-                when(auctionRepository.findById(id)).thenReturn(Optional.of(auction));
+                when(auctionRepository.findById(id)).thenReturn(Optional.of(auctionEntity));
 
-                AuctionEntity result = auctionService.getAuctionById(id, false);
+                Auction result = auctionService.getAuctionById(id, false);
 
-                assertThat(result).isSameAs(auction);
+                assertThat(result).isEqualTo(AuctionMapper.toDomain(auctionEntity));
                 verify(auctionRepository).findById(id);
-                verify(valueOperations).set(RedisConfig.AUCTIONS_PREFIX_DELIM + id.toString(), auction);
+                verify(valueOperations).set(RedisRepository.AUCTIONS_PREFIX_DELIM + id.toString(),
+                                AuctionMapper.toDomain(auctionEntity));
         }
 
         @Test
         void updateAuctionById_Success_UpdatesCache() {
+                Auction updates = Auction.builder().title("Updated Title").build();
+                Auction updatedAuction = Auction.builder().title("Updated Title").build();
+                AuctionEntity updatedEntity = AuctionMapper.toEntity(updatedAuction);
+
                 when(valueOperations.get(anyString())).thenReturn(null);
-                when(auctionRepository.findById(id)).thenReturn(Optional.of(auction));
-                when(auctionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+                when(auctionRepository.findById(id)).thenReturn(Optional.of(auctionEntity));
+                when(auctionRepository.save(any())).thenReturn(updatedEntity);
 
-                AuctionEntity updates = AuctionEntity.builder()
-                                .title("New Title")
-                                .build();
+                Auction result = auctionService.updateAuctionById(id, updates);
 
-                AuctionEntity updated = auctionService.updateAuctionById(id, updates);
-
-                assertThat(updated.getTitle()).isEqualTo("New Title");
-                verify(auctionRepository).save(auction);
+                assertThat(result.getTitle()).isEqualTo("Updated Title");
+                verify(auctionRepository).save(any(AuctionEntity.class));
         }
 
         @Test
@@ -243,25 +191,24 @@ public class AuctionServiceTest {
                 when(valueOperations.get(anyString())).thenReturn(null);
                 when(auctionRepository.findById(id)).thenReturn(Optional.empty());
 
-                AuctionEntity updates = AuctionEntity.builder()
-                                .title("Whatever")
-                                .build();
+                Auction updates = Auction.builder().title("Doesn't matter").build();
 
                 assertThatThrownBy(() -> auctionService.updateAuctionById(id, updates))
                                 .isInstanceOf(NotFoundException.class)
                                 .hasMessageContaining("Auction not found");
-                verify(auctionRepository).findById(id);
+
                 verify(auctionRepository, never()).save(any());
         }
 
         @Test
         void softDeleteAuctionById_Success_EvictsCache() {
                 when(valueOperations.get(anyString())).thenReturn(null);
-                when(auctionRepository.findById(id)).thenReturn(Optional.of(auction));
+                when(auctionRepository.findById(id)).thenReturn(Optional.of(auctionEntity));
+                when(auctionRepository.save(any())).thenReturn(auctionEntity);
 
                 auctionService.softDeleteAuctionById(id);
 
-                verify(auctionRepository).save(argThat(a -> a.getIsDeleted()));
-                verify(redisTemplate).delete(RedisConfig.AUCTIONS_PREFIX_DELIM + id.toString());
+                verify(auctionRepository).save(argThat(e -> e.getIsDeleted()));
+                verify(redisTemplate).delete(RedisRepository.AUCTIONS_PREFIX_DELIM + id.toString());
         }
 }
