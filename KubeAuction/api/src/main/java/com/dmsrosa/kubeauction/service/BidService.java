@@ -106,7 +106,7 @@ public class BidService {
     public Bid findBidById(ObjectId id, boolean getIsDeleted) {
         Bid cached = redis.redisGet(id.toString(), Bid.class);
 
-        if (getIsDeleted || !cached.getIsDeleted())
+        if (getIsDeleted || cached.getIsDeleted())
             return cached;
 
         Optional<BidEntity> o = bidRepository.findById(id);
@@ -116,7 +116,7 @@ public class BidService {
 
         Bid bid = BidMapper.toDomain(o.get());
 
-        if (getIsDeleted || !bid.getIsDeleted())
+        if (getIsDeleted || bid.getIsDeleted())
             throw new NotFoundException("Bid with id=%s not found", id.toString());
 
         redis.redisSet(bid.getId().toString(), bid);

@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import com.dmsrosa.kubeauction.shared.database.domain.Auction;
 import com.dmsrosa.kubeauction.shared.redis.RedisRepository;
 
 @Service
@@ -28,12 +29,13 @@ public class AuctionJobRunner {
         if (expiredAuctions == null || expiredAuctions.isEmpty())
             return;
 
-        for (ZSetOperations.TypedTuple<String> auction : expiredAuctions) {
-            String auctionId = auction.getValue();
+        for (ZSetOperations.TypedTuple<String> a : expiredAuctions) {
+            // TODO this cast is possibly the worse way of doing this
+            Auction auction = (Auction) a;
 
-            redisTemplate.opsForZSet().remove(RedisRepository.AUCTIONS_NOTIFICATIONS_KEY, auctionId);
+            redisTemplate.opsForZSet().remove(RedisRepository.AUCTIONS_NOTIFICATIONS_KEY, auction);
 
-            processAuctionEnd(auctionId);
+            processAuctionEnd(auction.getId().toString());
         }
     }
 

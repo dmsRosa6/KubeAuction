@@ -1,21 +1,13 @@
 package com.dmsrosa.kubeauction.config;
 
-import org.bson.UuidRepresentation;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
+import jakarta.annotation.PostConstruct;
 
 @Configuration
-@EnableMongoRepositories("com.dmsrosa.kubeauction.database.dao.repository")
 public class MongoConfig extends AbstractMongoClientConfiguration {
 
     public static final String BIDS_DB = "bids";
@@ -25,12 +17,14 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
     @Value("${spring.data.mongodb.uri}")
     private String mongoUri;
 
-    @Value("${spring.data.mongodb.database}")
-    private String databaseName;
+    @Override
+    public MongoClient mongoClient() {
+        return MongoClients.create(mongoUri);
+    }
 
     @Override
     protected String getDatabaseName() {
-        return databaseName;
+        return "kubeauction";
     }
 
     public String getBidsName() {
@@ -45,17 +39,10 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
         return "Users";
     }
 
-    @Bean
-    public MongoClient mongoClient(@Value("${spring.data.mongodb.uri}") String uri) {
-        return MongoClients.create(
-                MongoClientSettings.builder()
-                        .applyConnectionString(new ConnectionString(uri))
-                        .uuidRepresentation(UuidRepresentation.STANDARD)
-                        .build());
-    }
-
-    @Bean
-    public MongoTemplate mongoTemplate() {
-        return new MongoTemplate(new SimpleMongoClientDatabaseFactory(mongoClient(), databaseName));
+    @PostConstruct
+    public void printConfig() {
+        System.out.println("=== MONGODB CONFIGURATION ===");
+        System.out.println("MongoDB URI: " + mongoUri);
+        System.out.println("==============================");
     }
 }

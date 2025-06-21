@@ -58,7 +58,7 @@ public class UserService {
 
         User cached = redis.redisGet(id.toString(), User.class);
 
-        if (includeDeleted || !cached.isDeleted()) {
+        if (cached != null && (includeDeleted || cached.isDeleted())) {
             return cached;
         }
 
@@ -69,7 +69,7 @@ public class UserService {
 
         User user = UserMapper.toDomain(opt.get());
 
-        if (includeDeleted || !user.isDeleted())
+        if (includeDeleted || user.isDeleted())
             throw new NotFoundException("User not found. id=%s", id.toString());
 
         Map<String, Pair<Object, Boolean>> m = new HashMap<>(2);
@@ -86,7 +86,7 @@ public class UserService {
 
         User cached = redis.redisGet(email, User.class, true);
 
-        if (includeDeleted || !cached.isDeleted()) {
+        if (includeDeleted || cached.isDeleted()) {
             return cached;
         }
 
@@ -97,7 +97,7 @@ public class UserService {
 
         User user = UserMapper.toDomain(opt.get());
 
-        if (includeDeleted || !user.isDeleted())
+        if (includeDeleted || user.isDeleted())
             throw new NotFoundException("User not found. email=%s", email);
 
         Map<String, Pair<Object, Boolean>> m = new HashMap<>(2);

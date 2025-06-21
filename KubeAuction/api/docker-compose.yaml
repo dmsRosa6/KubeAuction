@@ -12,7 +12,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 128M
+          memory: 256M
     networks:
       - kubeauction-net
 
@@ -31,7 +31,6 @@ services:
     networks:
       - kubeauction-net
 
-  #TODO I Should probabily use better credentials, for now it will suffice
   minio:
     image: minio/minio:latest
     container_name: kubeauction-minio
@@ -63,8 +62,16 @@ services:
       - minio
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/kubeauction
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      MINIO_URI: http://minio:9000
+      MINIO_USER: minioadmin
+      MINIO_KEY: minioadmin
+      SPRING_REDIS_TIMEOUT: 10000
+      SPRING_REDIS_CONNECT_TIMEOUT: 10000
     networks:
       - kubeauction-net
+    restart: unless-stopped
 
 networks:
   kubeauction-net:

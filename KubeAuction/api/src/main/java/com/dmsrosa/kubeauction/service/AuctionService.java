@@ -14,12 +14,8 @@ import com.dmsrosa.kubeauction.shared.database.dao.repository.AuctionRepository;
 import com.dmsrosa.kubeauction.shared.database.domain.Auction;
 import com.dmsrosa.kubeauction.shared.mapper.AuctionMapper;
 import com.dmsrosa.kubeauction.shared.redis.RedisRepository;
-import com.mongodb.internal.connection.Time;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class AuctionService {
 
     private final AuctionRepository auctionRepository;
@@ -39,7 +35,8 @@ public class AuctionService {
         AuctionEntity saved = auctionRepository.save(AuctionMapper.toEntity(auction));
         Auction a = AuctionMapper.toDomain(saved);
         redis.redisSet(a.getId().toString(), saved);
-        redis.redisZAdd(RedisRepository.AUCTIONS_NOTIFICATIONS_KEY, a.getId().toString(), a.getEndDate().getTime());
+        redis.addToNotifications(a,
+                a.getEndDate().getTime());
         return a;
     }
 
@@ -47,7 +44,7 @@ public class AuctionService {
 
         Auction cached = redis.redisGet(id.toString(), Auction.class);
 
-        if (includeDeleted || !cached.isDeleted())
+        if (includeDeleted || cached.isDeleted())
             return cached;
 
         Optional<AuctionEntity> o = auctionRepository.findById(id);
@@ -57,7 +54,7 @@ public class AuctionService {
 
         Auction auction = AuctionMapper.toDomain(o.get());
 
-        if (includeDeleted || !auction.isDeleted())
+        if (includeDeleted || auction.isDeleted())
             throw new NotFoundException("Auction not found.id=%s", id.toString());
 
         redis.redisSet(id.toString(), auction);

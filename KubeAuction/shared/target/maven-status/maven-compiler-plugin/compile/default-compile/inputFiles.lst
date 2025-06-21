@@ -1,5 +1,6 @@
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/repository/UserRepository.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/mapper/AuctionMapper.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/redis/RedisDebug.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/config/JacksonConfig.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/utils/Pair.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/mapper/BidMapper.java

@@ -16,7 +16,6 @@ import com.dmsrosa.kubeauction.shared.database.domain.Auction;
 import com.dmsrosa.kubeauction.shared.database.domain.Bid;
 import com.dmsrosa.kubeauction.shared.database.domain.User;
 import com.dmsrosa.kubeauction.shared.utils.Pair;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Repository
@@ -55,10 +54,15 @@ public class RedisRepository {
 
     public <T> T redisGet(String id, Class<T> type, boolean usesEmail) {
         String key = buildKey(id, type, usesEmail);
-        Object json = valueOps.get(key);
-        if (json == null)
+        Object value = valueOps.get(key);
+        if (value == null)
             return null;
-        return objectMapper.convertValue(json, type);
+
+        if (type.isInstance(value)) {
+            return type.cast(value);
+        } else {
+            return objectMapper.convertValue(value, type);
+        }
     }
 
     public <T> T redisGet(String id, Class<T> type) {
@@ -67,12 +71,7 @@ public class RedisRepository {
 
     public void redisSet(String id, Object value, boolean usesEmail) {
         String key = buildKey(id, value, usesEmail);
-        try {
-            String json = objectMapper.writeValueAsString(value);
-            valueOps.set(key, json);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to write Redis value for key: " + key, e);
-        }
+        valueOps.set(key, value);
     }
 
     public void redisSet(String id, Object value) {
@@ -83,11 +82,7 @@ public class RedisRepository {
         Map<String, Object> redisMap = new HashMap<>();
         for (Map.Entry<String, Object> en : map.entrySet()) {
             String key = buildKey(en.getKey(), en.getValue(), false);
-            try {
-                redisMap.put(key, objectMapper.writeValueAsString(en.getValue()));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed multiSet for key: " + key, e);
-            }
+            redisMap.put(key, en.getValue());
         }
         valueOps.multiSet(redisMap);
     }
@@ -96,11 +91,7 @@ public class RedisRepository {
         Map<String, Object> redisMap = new HashMap<>();
         for (var en : map.entrySet()) {
             String key = buildKey(en.getKey(), en.getValue().getFirst(), en.getValue().getSecond());
-            try {
-                redisMap.put(key, objectMapper.writeValueAsString(en.getValue().getFirst()));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed multiSet variant for key: " + key, e);
-            }
+            redisMap.put(key, en.getValue().getFirst());
         }
         valueOps.multiSet(redisMap);
     }
@@ -129,12 +120,7 @@ public class RedisRepository {
     }
 
     public void addToNotifications(Object value, double score) {
-        try {
-            String json = objectMapper.writeValueAsString(value);
-            redisTemplate.opsForZSet().add(AUCTIONS_NOTIFICATIONS_KEY, json, score);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed notifications ZSet for key: " + AUCTIONS_NOTIFICATIONS_KEY, e);
-        }
+        redisTemplate.opsForZSet().add(AUCTIONS_NOTIFICATIONS_KEY, value, score);
     }
 
     public void deleteFromNotifications(Object value) {
@@ -148,12 +134,7 @@ public class RedisRepository {
 
     public void publishToAuctionChannel(String auctionId, Object message) {
         String channel = CHANNEL_PREFIX + auctionId;
-        try {
-            String payload = objectMapper.writeValueAsString(message);
-            redisTemplate.convertAndSend(channel, payload);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to publish to channel: " + channel, e);
-        }
+        redisTemplate.convertAndSend(channel, message);
     }
 
     private String buildKey(String id, Object value, boolean usesEmail) {
