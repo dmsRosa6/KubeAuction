@@ -6,18 +6,15 @@ import java.util.List;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
-import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
-import org.springframework.context.annotation.Fallback;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import com.dmsrosa.kubeauction.config.MongoConfig;
 import com.dmsrosa.kubeauction.exception.InvalidBidException;
 import com.dmsrosa.kubeauction.exception.NotFoundException;
+import com.dmsrosa.kubeauction.shared.database.MongoConfig;
 import com.dmsrosa.kubeauction.shared.database.dao.entity.BidEntity;
 import com.dmsrosa.kubeauction.shared.database.dao.repository.BidRepository;
 import com.dmsrosa.kubeauction.shared.database.domain.Auction;

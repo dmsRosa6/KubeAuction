@@ -105,20 +105,6 @@ public class RedisRepository {
         redisDelete(id, type, false);
     }
 
-    public void addToExpirationZSet(String id, long score) {
-        redisTemplate.opsForZSet()
-                .add(AUCTIONS_PREFIX_DELIM + id, id, score);
-    }
-
-    public Set<TypedTuple<Object>> getExpiredFromZSet(String key, long maxScore) {
-        return redisTemplate.opsForZSet()
-                .rangeByScoreWithScores(key, 0, maxScore);
-    }
-
-    public void deleteFromExpirationZSet(String key, String id) {
-        redisTemplate.opsForZSet().remove(key, id);
-    }
-
     public void addToNotifications(Object value, double score) {
         redisTemplate.opsForZSet().add(AUCTIONS_NOTIFICATIONS_KEY, value, score);
     }
@@ -132,8 +118,8 @@ public class RedisRepository {
         return redisTemplate.opsForZSet().rangeByScoreWithScores(AUCTIONS_NOTIFICATIONS_KEY, 0, now);
     }
 
-    public void publishToAuctionChannel(String auctionId, Object message) {
-        String channel = CHANNEL_PREFIX + auctionId;
+    public void publishToAuctionChannel(String id, Object message) {
+        String channel = CHANNEL_PREFIX + id;
         redisTemplate.convertAndSend(channel, message);
     }
 
