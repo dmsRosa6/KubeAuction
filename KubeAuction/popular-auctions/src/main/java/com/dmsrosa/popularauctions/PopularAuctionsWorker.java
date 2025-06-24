@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 })
 @EnableScheduling
 public class PopularAuctionsWorker {
-    public static void main(String[] args) {
+     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(PopularAuctionsWorker.class);
         app.setWebApplicationType(WebApplicationType.NONE);
         app.run(args);

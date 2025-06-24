@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifications-worker
+  namespace: kubeauction
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: notifications-worker }
+  template:
+    metadata:
+      labels: { app: notifications-worker }
+    spec:
+      containers:
+      - name: worker
+        image: kubeauction-notifications:latest
+        envFrom:
+        - configMapRef:
+            name: kubeauction-config
+        resources:
+          limits:
+            cpu: "300m"
+            memory: "256Mi"

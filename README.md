@@ -214,13 +214,15 @@ API Endpoints
 -   GET /api/bids/auction/{auctionId} - Get bids for auction
 -   GET /api/bids/user/{userId} - Get user's bids
 
-Current Limitations
+Current Limitations / Improvements
 -------------------
 
 -   Security: No authentication/authorization implemented
 -   Notifications: Email/winner notification logic is stubbed
 -   Frontend: API-first architecture (no UI)
 -   Environment: Designed for local development, not production-ready
+-   There is A LOT of room from performance improvements, things like using the cache better, sending the updates in batches to not clog the network more, etc.
+
 
 
 Note: This is an educational project focused on learning backend development patterns and technologies. It demonstrates various concepts but is not intended for production use.

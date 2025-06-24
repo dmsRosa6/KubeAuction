@@ -1,6 +1,8 @@
 package com.dmsrosa.kubeauction.shared.redis;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,11 +13,15 @@ import org.springframework.stereotype.Repository;
 
 import com.dmsrosa.kubeauction.shared.database.dao.entity.AuctionEntity;
 import com.dmsrosa.kubeauction.shared.database.dao.entity.BidEntity;
+import com.dmsrosa.kubeauction.shared.database.dao.entity.PopularAuctionEntity;
 import com.dmsrosa.kubeauction.shared.database.dao.entity.UserEntity;
 import com.dmsrosa.kubeauction.shared.database.domain.Auction;
 import com.dmsrosa.kubeauction.shared.database.domain.Bid;
+import com.dmsrosa.kubeauction.shared.database.domain.PopularAuction;
 import com.dmsrosa.kubeauction.shared.database.domain.User;
 import com.dmsrosa.kubeauction.shared.utils.Pair;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Repository
@@ -34,6 +40,8 @@ public class RedisRepository {
     public static final String AUCTIONS_NOTIFICATIONS_KEY = "auctions::notifications";
     public static final String CHANNEL_PREFIX = "channel::auction::";
 
+    public static final String POPULAR_AUCTIONS = "popular_Auctions";
+
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final ValueOperations<String, Object> valueOps;
@@ -42,6 +50,27 @@ public class RedisRepository {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.valueOps = redisTemplate.opsForValue();
+    }
+
+    public void setPopular(List<PopularAuctionEntity> list) throws JsonProcessingException {
+        String json = objectMapper.writeValueAsString(list);
+        valueOps.set(POPULAR_AUCTIONS, json);
+    }
+
+    public List<PopularAuctionEntity> getPopular() {
+        String json = (String) valueOps.get(POPULAR_AUCTIONS);
+        if (json == null) {
+            throw new IllegalStateException("Redis cache miss for popular auctions");
+        }
+
+        try {
+            return objectMapper.readValue(
+                    json,
+                    new TypeReference<List<PopularAuctionEntity>>() {
+                    });
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to parse popular auctions JSON", e);
+        }
     }
 
     public <T> T redisGetOrThrow(String id, Class<T> type, boolean usesEmail) {

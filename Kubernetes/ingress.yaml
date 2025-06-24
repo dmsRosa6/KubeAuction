@@ -4,26 +4,16 @@ metadata:
   name: kubeauction-ingress
   namespace: kubeauction
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: nginx
 spec:
   rules:
-    - host: app.localhost
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: kubeauction-app
-                port:
-                  number: 8080
-    - host: minio.localhost
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: minio
-                port:
-                  number: 9001
+  - host: auctions.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kubeauction-api
+            port:
+              number: 8080

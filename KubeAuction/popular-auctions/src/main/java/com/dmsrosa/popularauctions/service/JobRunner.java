@@ -1,48 +1,96 @@
 package com.dmsrosa.popularauctions.service;
 
-import java.util.Set;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import com.dmsrosa.kubeauction.shared.database.dao.entity.AuctionEntity;
+import com.dmsrosa.kubeauction.shared.database.dao.entity.PopularAuctionEntity;
+import com.dmsrosa.kubeauction.shared.redis.RedisRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class JobRunner {
 
+    private static final long FIVE_MIN = 1000 * 60 * 5;
 
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+    private final RedisRepository redis;
+    private final MongoTemplate mongoTemplate;
+    private final ObjectMapper objectMapper;
 
-    // Runs every 5 seconds
-    @Scheduled(fixedRate = 5000)
-    public void checkForExpiredAuctions() {
-        long now = System.currentTimeMillis();
+    public JobRunner(RedisRepository redisRepository,
+                     MongoTemplate mongoTemplate,
+                     ObjectMapper objectMapper) {
+        this.redis = redisRepository;
+        this.mongoTemplate = mongoTemplate;
+        this.objectMapper = objectMapper;
+    }
 
-        // Find auctions with expiration timestamps <= now
-        Set<ZSetOperations.TypedTuple<String>> expiredAuctions = redisTemplate.opsForZSet()
-                .rangeByScoreWithScores(AUCTION_ZSET_KEY, 0, now);
+    //TODO Pretty sure u can have MongoDB pipelines do a lot more than what i am doin
+    @Scheduled(fixedRate = FIVE_MIN)
+    public void getPopularAuctions() throws Exception {
+        Date twoDaysAgo = Date.from(
+            Instant.now().minus(2, ChronoUnit.DAYS)
+        );
 
-        if (expiredAuctions == null || expiredAuctions.isEmpty())
-            return;
+        MatchOperation match = Aggregation.match(
+            Criteria.where("createdAt").gte(twoDaysAgo)
+                    .and("isDeleted").is(false)
+        );
+        
+        GroupOperation group = Aggregation.group("auctionId")
+            .count().as("bidCount");
+        
+        Aggregation agg = Aggregation.newAggregation(match, group);
+        
+        List<Document> results = mongoTemplate
+            .aggregate(agg, "bids", Document.class)
+            .getMappedResults();
 
-        for (ZSetOperations.TypedTuple<String> auction : expiredAuctions) {
-            String auctionId = auction.getValue();
+        mongoTemplate.dropCollection(PopularAuctionEntity.class);
+        List<PopularAuctionEntity> snapshots = new ArrayList<>();
+        
+        for (Document doc : results) {
+            ObjectId aid = doc.getObjectId("_id");
+            int count = doc.getInteger("bidCount");
 
-            // Remove from zset
-            redisTemplate.opsForZSet().remove(AUCTION_ZSET_KEY, auctionId);
+            AuctionEntity auction = mongoTemplate
+                .findById(aid, AuctionEntity.class);
 
-            // Handle post-auction logic
-            processAuctionEnd(auctionId);
+            if (auction == null
+             || auction.getIsDeleted()
+             || auction.getEndDate().before(new Date())) {
+                continue;
+            }
+            
+            snapshots.add(PopularAuctionEntity.builder()
+                .id(aid)
+                .title(auction.getTitle())
+                .imageId(auction.getImageId())
+                .count(count)
+                .build());
+        }
+
+
+        if (!snapshots.isEmpty()) {
+            String json = objectMapper.writeValueAsString(snapshots);
+
+            redis.setPopular(snapshots);
+
+            mongoTemplate.insertAll(snapshots);
         }
     }
-
-    private void processAuctionEnd(String auctionId) {
-        // TODO: Load winner from DB or Redis
-        // TODO: Send notification (maybe publish to another queue or email service)
-        // TODO: Update auction status in DB
-
-        System.out.println("Auction " + auctionId + " ended. Processing winner notification.");
-    }
 }
+
