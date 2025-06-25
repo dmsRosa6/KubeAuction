@@ -5,8 +5,10 @@ com/dmsrosa/kubeauction/shared/database/domain/User$UserBuilder.class
 com/dmsrosa/kubeauction/shared/mapper/UserMapper.class
 com/dmsrosa/kubeauction/shared/database/domain/Bid$BidBuilder.class
 com/dmsrosa/kubeauction/shared/utils/Pair.class
+com/dmsrosa/kubeauction/shared/database/MongoConfig.class
 com/dmsrosa/kubeauction/shared/database/dao/entity/BidEntity$BidEntityBuilder.class
 com/dmsrosa/kubeauction/shared/database/dao/entity/BidEntity.class
+com/dmsrosa/kubeauction/shared/database/dao/entity/PopularAuctionEntity$PopularAuctionEntityBuilder.class
 com/dmsrosa/kubeauction/shared/config/JacksonConfig$1.class
 com/dmsrosa/kubeauction/shared/redis/dto/AuctionTask.class
 com/dmsrosa/kubeauction/shared/database/dao/entity/UserEntity$UserEntityBuilder.class
@@ -21,5 +23,10 @@ com/dmsrosa/kubeauction/shared/database/domain/User.class
 com/dmsrosa/kubeauction/shared/database/domain/Auction$AuctionBuilder.class
 com/dmsrosa/kubeauction/shared/database/dao/repository/AuctionRepository.class
 com/dmsrosa/kubeauction/shared/redis/RedisDebug.class
+com/dmsrosa/kubeauction/shared/mapper/PopularAuctionMapper.class
+com/dmsrosa/kubeauction/shared/database/domain/PopularAuction.class
+com/dmsrosa/kubeauction/shared/redis/RedisRepository$1.class
 com/dmsrosa/kubeauction/shared/database/domain/Bid.class
+com/dmsrosa/kubeauction/shared/database/dao/entity/PopularAuctionEntity.class
+com/dmsrosa/kubeauction/shared/database/domain/PopularAuction$PopularAuctionBuilder.class
 com/dmsrosa/kubeauction/shared/redis/RedisConfig.class

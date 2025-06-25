@@ -24,48 +24,26 @@ Architecture Overview
 
 The system emphasizes clean architecture, soft deletion strategies, caching with Redis, background processing with scheduled jobs, and deployment with Docker and Kubernetes. It's structured into separate modules to improve maintainability and simulate a microservice-like architecture.
 
-### Module Structure
 
-```
-kubeauction/
-├── kubeauction-api/          # REST API endpoints
-├── kubeauction-shared/       # Shared domain models & utilities
-├── auction-worker/           # Background processing service
-├── kubernetes/              # K8s deployment manifests
-└── docker-compose.yml       # Local development setup
+Technology Stack
+----------------
 
-```
+- Java 21
+- Spring Boot 3.x
+- MongoDB 4.4+
+- Redis 7.x
+- Docker & Docker Compose
+- Kubernetes (Kind)
 
-#### kubeauction-api
+### Prerequisites
 
-REST API Layer
+-   Java 21+
+-   Docker & Docker Compose
+-   Maven 3.8+
 
--   Controllers for users, auctions, and bids
--   Caching logic for read operations
--   Write-through and eviction logic for updates/deletes
--   Aggregation pipelines for complex queries
--   Global exception handling with @RestControllerAdvice
 
-#### kubeauction-shared
+## Data Model
 
-Shared Library Module
-
--   Domain models (UserEntity, AuctionEntity, BidEntity)
--   MongoDB repositories
--   Common Redis utilities
--   DTOs and mappers
-
-#### auction-worker
-
-Background Service
-
--   Periodic execution using Spring's @Scheduled
--   Auction expiration management
--   Winner determination logic
--   Redis cleanup operations
-
-Data Model
-----------
 
 Entities are stored in MongoDB with soft deletion support and reference-based relationships.
 
@@ -75,7 +53,7 @@ Entities are stored in MongoDB with soft deletion support and reference-based re
 ObjectId id;
 String name;
 String email;
-String pwd;           // bcrypt-hashed
+String pwd;           
 Boolean isDeleted;
 
 ```
@@ -112,7 +90,7 @@ Boolean auctionDeleted;
 Caching Strategy
 ----------------
 
-The system uses Redis manually (not via Spring Cache abstraction) for optimized performance:
+The system uses Redis manually (not via Spring Cache abstraction):
 
 ### Key Patterns
 
@@ -126,8 +104,8 @@ The system uses Redis manually (not via Spring Cache abstraction) for optimized 
 -   Writes: Update MongoDB → Evict/update Redis key
 -   Expiration: Redis Sorted Sets track auction end times
 
-Auction Expiration and Notification Workflow
----------------------------
+## Notifications Workflow
+
 
 1.  Registration: Auctions added to Redis ZSet with end date as score
 2.  Monitoring: Scheduled job queries expired auctions (score ≤ now)
@@ -136,64 +114,30 @@ Auction Expiration and Notification Workflow
     -   Execute business logic
     -   Clean up Redis state
 
-Quick Start
------------
 
-### Prerequisites
-
--   Java 21+
--   Docker & Docker Compose
--   Maven 3.8+
-
-# Build and start all services
+# Build
 
 ### Docker Deployment
 
 ```bash
 $ cd KubeAuction
-$ ./run.sh
+$ ./run_docker.sh
 ```
 
 ### Kubernetes Deployment
 
-
-Testing (Missing)
--------
-
-The project includes comprehensive test coverage:
-
--   Unit Tests: JUnit 5 + Mockito for service layer testing
--   Integration Tests: @SpringBootTest + MockMvc for API verification
-
-```
-# Run all tests
-mvn test
-
-# Run tests with coverage
-mvn test jacoco:report
-
+```bash
+$ cd KubeAuction
+$ ./run_kubernetes.sh
 ```
 
-Technology Stack
-----------------
-
-| Purpose | Technology |
-| --- | --- |
-| Language | Java 21 |
-| Framework | Spring Boot 3.x |
-| Database | MongoDB |
-| Cache | Redis |
-| Scheduling | Spring @Scheduled |
-| Testing | JUnit 5, Mockito, MockMvc |
-| Containerization | Docker |
-| Orchestration | Kubernetes (Kind) |
+The Api can thhen be reached on localhost:8080 
 
 API Endpoints
 -------------
 
 ### Users
 
--   GET /api/users - List all users
 -   POST /api/users - Create user
 -   GET /api/users/{id} - Get user by ID
 -   PUT /api/users/{id} - Update user
@@ -201,7 +145,6 @@ API Endpoints
 
 ### Auctions
 
--   GET /api/auctions - List all auctions
 -   POST /api/auctions - Create auction
 -   GET /api/auctions/{id} - Get auction details
 -   PUT /api/auctions/{id} - Update auction
@@ -209,7 +152,6 @@ API Endpoints
 
 ### Bids
 
--   GET /api/bids - List all bids
 -   POST /api/bids - Place bid
 -   GET /api/bids/auction/{auctionId} - Get bids for auction
 -   GET /api/bids/user/{userId} - Get user's bids
@@ -218,10 +160,11 @@ Current Limitations / Improvements
 -------------------
 
 -   Security: No authentication/authorization implemented
--   Notifications: Email/winner notification logic is stubbed
+-   Notifications: Email/winner notification logic is stubbed using redis pub/sub
 -   Frontend: API-first architecture (no UI)
--   Environment: Designed for local development, not production-ready
--   There is A LOT of room from performance improvements, things like using the cache better, sending the updates in batches to not clog the network more, using async, etc.
+-   There is room for performance improvements related to the cache and db: sending the updates in batches to not clog the network more, using async, redis functions could probably help on a case or other, etc.
+-   Things like pagination could be a plus
+-   Probabily could test how everything works under load using artillery (its half configured already), and i ditched unit and integration tests that needed to be entirely re done since the last project big refactor 
 
 
 

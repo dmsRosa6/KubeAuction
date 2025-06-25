@@ -6,7 +6,7 @@ metadata:
   labels:
     app: kubeauction
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: kubeauction
@@ -17,7 +17,8 @@ spec:
     spec:
       containers:
       - name: kubeauction
-        image: your-docker-repo/kubeauction:latest
+        image: kubeauction-api:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8080
         envFrom:

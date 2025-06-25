@@ -1,2 +1,2 @@
-/home/dmsrosa/Desktop/KubeAuction/KubeAuction/notifications/src/main/java/com/dmsrosa/auctionworker/service/AuctionJobRunner.java
-/home/dmsrosa/Desktop/KubeAuction/KubeAuction/notifications/src/main/java/com/dmsrosa/auctionworker/AuctionWorkerApplication.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/notifications/src/main/java/com/dmsrosa/notifications/service/JobRunner.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/notifications/src/main/java/com/dmsrosa/notifications/AuctionWorkerApplication.java

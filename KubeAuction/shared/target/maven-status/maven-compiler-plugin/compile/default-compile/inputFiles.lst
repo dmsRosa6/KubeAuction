@@ -1,4 +1,5 @@
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/repository/UserRepository.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/MongoConfig.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/mapper/AuctionMapper.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/redis/RedisDebug.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/config/JacksonConfig.java
@@ -10,7 +11,10 @@
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/entity/UserEntity.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/repository/BidRepository.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/redis/dto/AuctionTask.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/mapper/PopularAuctionMapper.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/entity/PopularAuctionEntity.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/mapper/UserMapper.java
+/home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/domain/PopularAuction.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/repository/AuctionRepository.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/domain/Bid.java
 /home/dmsrosa/Desktop/KubeAuction/KubeAuction/shared/src/main/java/com/dmsrosa/kubeauction/shared/database/dao/entity/BidEntity.java

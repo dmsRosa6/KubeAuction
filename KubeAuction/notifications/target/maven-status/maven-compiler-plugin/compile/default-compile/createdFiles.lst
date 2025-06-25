@@ -1,2 +1,2 @@
-com/dmsrosa/auctionworker/AuctionWorkerApplication.class
-com/dmsrosa/auctionworker/service/AuctionJobRunner.class
+com/dmsrosa/notifications/AuctionWorkerApplication.class
+com/dmsrosa/notifications/service/JobRunner.class
